@@ -720,6 +720,7 @@ export function CharacterDetailClient({
                           CT {skillData.cooltime}秒
                         </span>
                       )}
+                      <span className="ml-auto shrink-0 text-[10px] md:text-xs text-text-muted">Lv12効果</span>
                     </div>
                     {/* 説明文エリア */}
                     <div className="bg-bg-card px-3 py-2.5">

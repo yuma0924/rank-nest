@@ -490,19 +490,19 @@ export default async function Home() {
               {rankedCharacters.slice(0, 3).map((char) => {
                 const rank = char.rank as 1 | 2 | 3;
 
-                // 順位ごとのカラー設定
+                // 順位ごとのカラー設定（トロフィーアイコン統一、色のみ変化）
+                const trophyPath = (
+                  <path d="M5 4h14v2h2v3.5a4.5 4.5 0 0 1-4.5 4.5h-.3a6 6 0 0 1-3.2 3.2V18h3v2H8v-2h3v-.8a6 6 0 0 1-3.2-3.2H7.5A4.5 4.5 0 0 1 3 9.5V6h2V4zm0 4v1.5A2.5 2.5 0 0 0 7.5 12V8H5zm12 0v4a2.5 2.5 0 0 0 2.5-2.5V8H17z" fill="currentColor" />
+                );
                 const rankConfig = {
                   1: {
                     borderColor: "#d4a017",
                     bannerBg: "rgba(255,185,0,0.15)",
                     rankText: "var(--star)",
                     badge: (
-                      <span className="flex h-7 w-7 items-center justify-center text-star">
-                        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
-                          <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z" fill="currentColor" />
-                          <path d="M5 18h14v2H5z" fill="currentColor" />
-                        </svg>
-                      </span>
+                      <svg className="h-7 w-7 drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]" style={{ color: "#eab308" }} viewBox="0 0 24 24" fill="none">
+                        {trophyPath}
+                      </svg>
                     ),
                   },
                   2: {
@@ -510,10 +510,8 @@ export default async function Home() {
                     bannerBg: "rgba(144,161,185,0.1)",
                     rankText: "var(--rank-silver)",
                     badge: (
-                      <svg className="h-7 w-7" viewBox="0 0 32 32" fill="none">
-                        <path d="M13 22l-4 6h14l-4-6" fill="#7a8fa3" />
-                        <circle cx="16" cy="14" r="10" fill="#b0c4d8" stroke="#90a1b9" strokeWidth="1.5" />
-                        <path d="M16 8l1.8 3.6 4 .6-2.9 2.8.7 4L16 17l-3.6 2 .7-4-2.9-2.8 4-.6L16 8z" fill="#e8eef4" stroke="#90a1b9" strokeWidth="0.5" />
+                      <svg className="h-7 w-7 drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]" style={{ color: "#94a3b8" }} viewBox="0 0 24 24" fill="none">
+                        {trophyPath}
                       </svg>
                     ),
                   },
@@ -522,10 +520,8 @@ export default async function Home() {
                     bannerBg: "rgba(225,113,0,0.1)",
                     rankText: "#fe9a00",
                     badge: (
-                      <svg className="h-7 w-7" viewBox="0 0 32 32" fill="none">
-                        <path d="M13 22l-4 6h14l-4-6" fill="#92400e" />
-                        <circle cx="16" cy="14" r="10" fill="#d97706" stroke="#b45309" strokeWidth="1.5" />
-                        <path d="M16 8l1.8 3.6 4 .6-2.9 2.8.7 4L16 17l-3.6 2 .7-4-2.9-2.8 4-.6L16 8z" fill="#fde68a" stroke="#b45309" strokeWidth="0.5" />
+                      <svg className="h-7 w-7 drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]" style={{ color: "#c2410c" }} viewBox="0 0 24 24" fill="none">
+                        {trophyPath}
                       </svg>
                     ),
                   },

@@ -161,7 +161,7 @@ export function RankingClient({
       ) : (
         <>
           <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-            {visibleRanked.map((char) => (
+            {visibleRanked.map((char, idx) => (
               <CharacterCard
                 key={char.id}
                 slug={char.slug}
@@ -169,7 +169,7 @@ export function RankingClient({
                 imageUrl={char.imageUrl}
 
                 avgRating={char.avgRating}
-                rank={char.rank}
+                rank={idx + 1}
               />
             ))}
           </div>
