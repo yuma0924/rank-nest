@@ -51,6 +51,7 @@ interface TierDetailClientProps {
     id: string;
     title: string | null;
     display_name: string | null;
+    description: string | null;
     data: Record<string, string[]>;
     likes_count: number;
     created_at: string;
@@ -415,6 +416,15 @@ export function TierDetailClient({
           </button>
         )}
       </div>
+
+      {/* 投稿者の解説 */}
+      {tier.description && (
+        <div className="rounded-2xl border border-border-primary bg-bg-card-alpha-light px-4 py-3">
+          <p className="whitespace-pre-line text-sm leading-relaxed text-text-secondary">
+            {tier.description}
+          </p>
+        </div>
+      )}
 
       {/* ティア表 */}
       <div className="overflow-hidden rounded-2xl border border-border-primary bg-bg-card">

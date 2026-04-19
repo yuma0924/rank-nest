@@ -56,6 +56,7 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -182,6 +183,7 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
           data,
           title: title.trim() || undefined,
           display_name: displayName.trim() || undefined,
+          description: description.trim() || undefined,
         }),
       });
 
@@ -223,23 +225,40 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
         onContextMenu={(e) => e.preventDefault()}
       >
         {/* 投稿フォーム */}
-        <div className="flex flex-col gap-2 md:flex-row md:max-w-md">
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="タイトル（必須）"
-            maxLength={100}
-            className="min-w-0 rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none md:flex-[3]"
-          />
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="投稿者名（任意）"
-            maxLength={50}
-            className="rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none md:flex-[2]"
-          />
+        <div className="space-y-2">
+          <div className="flex flex-col gap-2 md:flex-row md:max-w-md">
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="タイトル（必須）"
+              maxLength={100}
+              className="min-w-0 rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none md:flex-[3]"
+            />
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="投稿者名（任意）"
+              maxLength={50}
+              className="rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none md:flex-[2]"
+            />
+          </div>
+          <div className="relative md:max-w-md">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="このティアの解説・補足（任意／1000文字まで）"
+              maxLength={1000}
+              rows={3}
+              className="w-full resize-y rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+            />
+            {description.length > 0 && (
+              <span className="pointer-events-none absolute bottom-2 right-3 text-[10px] text-text-muted">
+                {description.length}/1000
+              </span>
+            )}
+          </div>
         </div>
 
         {/* ティア行 */}

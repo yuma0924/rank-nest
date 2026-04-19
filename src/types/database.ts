@@ -478,6 +478,7 @@ export interface Database {
           id: string;
           title: string | null;
           display_name: string | null;
+          description: string | null;
           data: Record<string, string[]>;
           user_hash: string;
           likes_count: number;
@@ -489,6 +490,7 @@ export interface Database {
           id?: string;
           title?: string | null;
           display_name?: string | null;
+          description?: string | null;
           data: Record<string, string[]>;
           user_hash: string;
           likes_count?: number;
@@ -500,6 +502,7 @@ export interface Database {
           id?: string;
           title?: string | null;
           display_name?: string | null;
+          description?: string | null;
           data?: Record<string, string[]>;
           user_hash?: string;
           likes_count?: number;

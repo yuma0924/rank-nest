@@ -195,6 +195,7 @@ export async function POST(request: NextRequest) {
       data?: Record<string, string[]>;
       title?: string;
       display_name?: string;
+      description?: string;
     };
 
     try {
@@ -206,7 +207,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, title, display_name } = parsed;
+    const { data, title, display_name, description } = parsed;
 
     // バリデーション
     if (!data || typeof data !== "object") {
@@ -265,6 +266,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (description && description.length > 1000) {
+      return NextResponse.json(
+        { error: "解説は1000文字以内で入力してください" },
+        { status: 400 }
+      );
+    }
+
     const finalDisplayName = display_name?.trim() || DEFAULT_DISPLAY_NAME;
 
     const headers = setCookieHeaders(cookieUuid, isNewCookie);
@@ -275,6 +283,7 @@ export async function POST(request: NextRequest) {
         data: data as Record<string, string[]>,
         title: title?.trim() || null,
         display_name: finalDisplayName,
+        description: description?.trim() || null,
         user_hash: userHash,
       })
       .select()

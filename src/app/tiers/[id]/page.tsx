@@ -18,6 +18,7 @@ type TierData = {
   id: string;
   title: string | null;
   display_name: string | null;
+  description: string | null;
   data: Record<string, string[]>;
   likes_count: number;
   is_deleted: boolean;
@@ -126,6 +127,7 @@ export default async function TierDetailPage({
         id: tier.id,
         title: tier.title,
         display_name: tier.display_name,
+        description: tier.description,
         data: tier.data,
         likes_count: tier.likes_count,
         created_at: tier.created_at,
