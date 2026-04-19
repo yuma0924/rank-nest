@@ -169,7 +169,7 @@ export default async function CharacterPage({ params }: Props) {
     relatedQuery = relatedQuery.eq("rarity", character.rarity);
   }
 
-  const { data: relatedChars } = await relatedQuery.limit(8).returns<RelatedRow[]>();
+  const { data: relatedChars } = await relatedQuery.returns<RelatedRow[]>();
 
   // 関連キャラのランキングを取得
   const relatedIds = (relatedChars ?? []).map((c) => c.id);
