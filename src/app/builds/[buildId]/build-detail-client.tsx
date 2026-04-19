@@ -496,7 +496,7 @@ export function BuildDetailClient({
               </div>
               <button
                 onClick={() => setCommentFormOpen(true)}
-                className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#e05aa8] to-[#e87080] px-5 py-3 text-xs font-bold text-white shadow-md transition-opacity hover:opacity-90"
+                className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-accent/80 px-5 py-3 text-xs font-bold text-white shadow-sm transition-opacity hover:opacity-90"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />

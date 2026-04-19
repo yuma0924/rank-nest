@@ -417,15 +417,6 @@ export function TierDetailClient({
         )}
       </div>
 
-      {/* 投稿者の解説 */}
-      {tier.description && (
-        <div className="rounded-2xl border border-border-primary bg-bg-card-alpha-light px-4 py-3">
-          <p className="whitespace-pre-line text-sm leading-relaxed text-text-secondary">
-            {tier.description}
-          </p>
-        </div>
-      )}
-
       {/* ティア表 */}
       <div className="overflow-hidden rounded-2xl border border-border-primary bg-bg-card">
         {TIER_LABELS.map((label) => {
@@ -447,10 +438,22 @@ export function TierDetailClient({
           );
         })}
         {/* フッター */}
-        <div className="flex items-center justify-between border-t border-border-primary bg-bg-tertiary/50 px-4 py-3">
-          <div className="flex items-center gap-3 text-xs text-text-muted">
-            {tier.display_name && <span>by {tier.display_name}</span>}
-            <span>{formatDate(tier.created_at)}</span>
+        <div className="flex items-start justify-between gap-3 border-t border-border-primary bg-bg-tertiary/50 px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 text-xs text-text-muted">
+              {tier.display_name && (
+                <>
+                  <span className="font-semibold text-text-primary">{tier.display_name}</span>
+                  <span aria-hidden>·</span>
+                </>
+              )}
+              <span>{formatDate(tier.created_at)}</span>
+            </div>
+            {tier.description && (
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+                {tier.description}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <div className="relative" ref={shareMenuRef}>
@@ -500,7 +503,7 @@ export function TierDetailClient({
       </div>
 
       {/* コメント投稿 */}
-      <section>
+      <section className="mt-12">
         {!commentFormOpen ? (
           <div className="rounded-[14px] bg-gradient-to-r from-[rgba(246,51,154,0.1)] to-[rgba(255,32,86,0.1)] border border-accent-active/30 p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
             <div className="flex items-center justify-between gap-3">
@@ -517,7 +520,7 @@ export function TierDetailClient({
               </div>
               <button
                 onClick={() => setCommentFormOpen(true)}
-                className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#e05aa8] to-[#e87080] px-5 py-3 text-xs font-bold text-white shadow-md transition-opacity hover:opacity-90"
+                className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-accent/80 px-5 py-3 text-xs font-bold text-white shadow-sm transition-opacity hover:opacity-90"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
@@ -586,7 +589,7 @@ export function TierDetailClient({
       {/* 自分もティアを作る */}
       <Link
         href="/tiers/new"
-        className="mt-10 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#9048d4] to-[#d4408a] py-3 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90"
+        className="mt-10 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#e05aa8] to-[#e87080] py-3 text-sm font-bold text-white shadow-[0px_10px_15px_0px_rgba(224,90,168,0.12),0px_4px_6px_0px_rgba(224,90,168,0.12)] transition-opacity hover:opacity-90"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />

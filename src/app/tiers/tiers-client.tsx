@@ -160,7 +160,7 @@ export function TiersClient({ characters, allTiers }: TiersClientProps) {
         </div>
         <Link
           href="/tiers/new"
-          className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#9048d4] to-[#d4408a] px-4 py-2 text-xs font-bold text-white shadow-md transition-opacity hover:opacity-90"
+          className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#e05aa8] to-[#e87080] px-4 py-2 text-xs font-bold text-white shadow-[0px_10px_15px_0px_rgba(224,90,168,0.12),0px_4px_6px_0px_rgba(224,90,168,0.12)] transition-opacity hover:opacity-90"
         >
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -177,7 +177,7 @@ export function TiersClient({ characters, allTiers }: TiersClientProps) {
           </p>
           <Link
             href="/tiers/new"
-            className="mt-3 inline-block rounded-xl bg-gradient-to-r from-[#9048d4] to-[#d4408a] px-6 py-2.5 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90"
+            className="mt-3 inline-block rounded-xl bg-gradient-to-r from-[#e05aa8] to-[#e87080] px-6 py-2.5 text-sm font-bold text-white shadow-[0px_10px_15px_0px_rgba(224,90,168,0.12),0px_4px_6px_0px_rgba(224,90,168,0.12)] transition-opacity hover:opacity-90"
           >
             最初のティアを作成する
           </Link>

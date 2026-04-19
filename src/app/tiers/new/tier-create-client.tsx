@@ -225,39 +225,47 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
         onContextMenu={(e) => e.preventDefault()}
       >
         {/* 投稿フォーム */}
-        <div className="space-y-2">
-          <div className="flex flex-col gap-2 md:flex-row md:max-w-md">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="タイトル（必須）"
-              maxLength={100}
-              className="min-w-0 rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none md:flex-[3]"
-            />
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="投稿者名（任意）"
-              maxLength={50}
-              className="rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none md:flex-[2]"
-            />
+        <div className="space-y-2.5 rounded-2xl border border-border-primary bg-bg-card p-3.5 md:max-w-2xl">
+          <div className="grid gap-2.5 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs text-text-secondary">
+                タイトル<span className="text-[#f87171]">*</span>
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="ティアのタイトル"
+                maxLength={100}
+                className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:border-accent focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-text-secondary">
+                投稿者名（任意）
+              </label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="名無しの教主"
+                maxLength={50}
+                className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:border-accent focus:outline-none"
+              />
+            </div>
           </div>
-          <div className="relative md:max-w-md">
+          <div>
+            <label className="mb-1 block text-xs text-text-secondary">
+              コメント（任意）
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="このティアの解説・補足（任意／1000文字まで）"
+              placeholder="このティアについてのコメント"
               maxLength={1000}
-              rows={3}
-              className="w-full resize-y rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+              rows={2}
+              className="w-full resize-y rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:border-accent focus:outline-none"
             />
-            {description.length > 0 && (
-              <span className="pointer-events-none absolute bottom-2 right-3 text-[10px] text-text-muted">
-                {description.length}/1000
-              </span>
-            )}
           </div>
         </div>
 

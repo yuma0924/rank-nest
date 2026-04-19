@@ -806,7 +806,7 @@ export default async function Home() {
             <p className="text-sm text-text-muted">まだティアが投稿されていません</p>
             <Link
               href="/tiers/new"
-              className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#9048d4] to-[#d4408a] px-5 py-2.5 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#e05aa8] to-[#e87080] px-5 py-2.5 text-sm font-bold text-white shadow-[0px_10px_15px_0px_rgba(224,90,168,0.12),0px_4px_6px_0px_rgba(224,90,168,0.12)] transition-opacity hover:opacity-90"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
