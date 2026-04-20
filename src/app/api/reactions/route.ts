@@ -156,10 +156,17 @@ export async function POST(request: NextRequest) {
 
   const oldType = existingReaction?.reaction_type ?? null;
 
-  // 変更がない場合は何もしない
+  // 変更がない場合は DB 現在値を返す（クライアント同期用）
   if (oldType === reaction_type) {
     const headers = setCookieHeaders(cookieUuid, isNewCookie);
-    return NextResponse.json({ reaction_type, changed: false }, { headers });
+    return NextResponse.json(
+      {
+        reaction_type,
+        thumbs_up_count: comment.thumbs_up_count,
+        thumbs_down_count: comment.thumbs_down_count,
+      },
+      { headers }
+    );
   }
 
   // カウント差分を計算
@@ -195,15 +202,25 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  const newThumbsUp = comment.thumbs_up_count + thumbsUpDelta;
+  const newThumbsDown = comment.thumbs_down_count + thumbsDownDelta;
+
   // 非正規化カウント更新
   await supabase
     .from("comments")
     .update({
-      thumbs_up_count: comment.thumbs_up_count + thumbsUpDelta,
-      thumbs_down_count: comment.thumbs_down_count + thumbsDownDelta,
+      thumbs_up_count: newThumbsUp,
+      thumbs_down_count: newThumbsDown,
     })
     .eq("id", comment_id);
 
   const headers = setCookieHeaders(cookieUuid, isNewCookie);
-  return NextResponse.json({ reaction_type, changed: true }, { headers });
+  return NextResponse.json(
+    {
+      reaction_type,
+      thumbs_up_count: newThumbsUp,
+      thumbs_down_count: newThumbsDown,
+    },
+    { headers }
+  );
 }

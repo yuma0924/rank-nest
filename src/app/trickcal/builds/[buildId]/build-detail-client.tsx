@@ -216,7 +216,15 @@ export function BuildDetailClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reaction_type: reaction }),
       });
-      if (!res.ok) {
+      if (res.ok) {
+        const data = await res.json();
+        setBuild((prev) => ({
+          ...prev,
+          likes_count: data.likes_count,
+          dislikes_count: data.dislikes_count,
+        }));
+        setUserReaction(data.user_reaction);
+      } else {
         setBuild((prev) => ({ ...prev, ...prevBuild }));
         setUserReaction(prevReaction);
       }
@@ -255,7 +263,21 @@ export function BuildDetailClient({
           body: JSON.stringify({ reaction_type: reaction }),
         }
       );
-      if (!res.ok) {
+      if (res.ok) {
+        const data = await res.json();
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === commentId
+              ? {
+                  ...c,
+                  thumbs_up_count: data.thumbs_up_count,
+                  thumbs_down_count: data.thumbs_down_count,
+                  user_reaction: data.user_reaction,
+                }
+              : c
+          )
+        );
+      } else {
         setComments((prev) =>
           prev.map((c) =>
             c.id === commentId

@@ -319,11 +319,28 @@ export function CharacterDetailClient({
     );
 
     try {
-      await fetch("/api/reactions", {
+      const res = await fetch("/api/reactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comment_id: commentId, reaction_type: reaction }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        setUserReactions((prev) => ({ ...prev, [commentId]: data.reaction_type }));
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === commentId
+              ? {
+                  ...c,
+                  thumbsUpCount: data.thumbs_up_count,
+                  thumbsDownCount: data.thumbs_down_count,
+                }
+              : c
+          )
+        );
+      } else {
+        throw new Error("reaction failed");
+      }
     } catch {
       // ロールバック
       setUserReactions((prev) => ({ ...prev, [commentId]: prevReaction }));

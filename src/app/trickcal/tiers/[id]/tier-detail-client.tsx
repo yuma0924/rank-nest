@@ -138,7 +138,11 @@ export function TierDetailClient({
           reaction_type: newLiked ? "up" : null,
         }),
       });
-      if (!res.ok) {
+      if (res.ok) {
+        const data = await res.json();
+        setUserLiked(data.user_liked);
+        setTier((prev) => ({ ...prev, likes_count: data.likes_count }));
+      } else {
         setUserLiked(prevLiked);
         setTier((prev) => ({ ...prev, likes_count: prevCount }));
       }
@@ -277,7 +281,21 @@ export function TierDetailClient({
           body: JSON.stringify({ reaction_type: reaction }),
         }
       );
-      if (!res.ok) {
+      if (res.ok) {
+        const data = await res.json();
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === commentId
+              ? {
+                  ...c,
+                  thumbs_up_count: data.thumbs_up_count,
+                  thumbs_down_count: data.thumbs_down_count,
+                  user_reaction: data.user_reaction,
+                }
+              : c
+          )
+        );
+      } else {
         setComments((prev) =>
           prev.map((c) =>
             c.id === commentId
