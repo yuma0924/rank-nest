@@ -3,8 +3,8 @@
 import { TIER_COLORS } from "@/lib/constants";
 import Link from "next/link";
 import type { TierLabel } from "@/lib/constants";
-import { CharacterIcon } from "@/components/character/character-icon";
-import { TierLikeButton } from "@/components/tier/tier-like-button";
+import { CharacterIcon } from "@/components/trickcal/character/character-icon";
+import { TierLikeButton } from "@/components/trickcal/tier/tier-like-button";
 
 type CharacterData = {
   id: string;

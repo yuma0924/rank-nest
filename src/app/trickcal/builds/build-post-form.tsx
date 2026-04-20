@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { StaticIcon } from "@/components/ui/static-icon";
-import { CharacterIcon } from "@/components/character/character-icon";
+import { CharacterIcon } from "@/components/trickcal/character/character-icon";
 import { Button } from "@/components/ui/button";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { cn, matchesName } from "@/lib/utils";

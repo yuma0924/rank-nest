@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { StaticIcon } from "@/components/ui/static-icon";
 import { cn, matchesName } from "@/lib/utils";
 import { ELEMENTS, ELEMENT_ICONS } from "@/lib/constants";
-import { CharacterCard } from "@/components/character/character-card";
+import { CharacterCard } from "@/components/trickcal/character/character-card";
 
 /** URLクエリパラメータからフィルター状態を復元 */
 function readFiltersFromURL() {

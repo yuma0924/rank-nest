@@ -2,7 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
-import { TierCharacterItem } from "@/components/tier/tier-character-item";
+import { TierCharacterItem } from "@/components/trickcal/tier/tier-character-item";
 import type { TierLabel } from "@/lib/constants";
 import { TIER_COLORS } from "@/lib/constants";
 

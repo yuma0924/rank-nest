@@ -3,7 +3,7 @@ import Link from "next/link";
 import { StaticIcon } from "@/components/ui/static-icon";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StarRatingDisplay } from "@/components/ui/star-rating";
-import { CharacterCard } from "@/components/character/character-card";
+import { CharacterCard } from "@/components/trickcal/character/character-card";
 import type { Element } from "@/lib/constants";
 import { ROLE_ICON_MAP, POSITION_ICON_MAP, ATTACK_TYPE_ICON_MAP } from "@/lib/constants";
 import { HomeSearchSection } from "./home-search-section";

@@ -19,9 +19,9 @@ import { StaticIcon } from "@/components/ui/static-icon";
 import { TIER_LABELS, ELEMENTS, ELEMENT_ICONS } from "@/lib/constants";
 import type { TierLabel } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { TierRow } from "@/components/tier/tier-row";
-import { TierCharacterItem } from "@/components/tier/tier-character-item";
-import { CharacterIcon } from "@/components/character/character-icon";
+import { TierRow } from "@/components/trickcal/tier/tier-row";
+import { TierCharacterItem } from "@/components/trickcal/tier/tier-character-item";
+import { CharacterIcon } from "@/components/trickcal/character/character-icon";
 import { Button } from "@/components/ui/button";
 
 

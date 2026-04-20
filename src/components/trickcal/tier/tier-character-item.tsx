@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CharacterIcon } from "@/components/character/character-icon";
+import { CharacterIcon } from "@/components/trickcal/character/character-icon";
 
 type IconSize = "sm" | "md" | "lg";
 

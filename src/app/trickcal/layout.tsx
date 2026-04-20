@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
+import { Header } from "@/components/trickcal/layout/header";
+import { Footer } from "@/components/trickcal/layout/footer";
 import { ScrollToTop } from "@/components/layout/scroll-to-top";
 import { NavigationProgress } from "@/components/layout/navigation-progress";
-import { SidebarCharacters } from "@/components/layout/sidebar-characters";
+import { SidebarCharacters } from "@/components/trickcal/layout/sidebar-characters";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = {

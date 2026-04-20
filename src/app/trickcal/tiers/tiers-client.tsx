@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { TierCard } from "@/components/tier/tier-card";
+import { TierCard } from "@/components/trickcal/tier/tier-card";
 
 type CharacterData = {
   id: string;

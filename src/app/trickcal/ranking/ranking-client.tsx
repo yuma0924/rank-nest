@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import { StaticIcon } from "@/components/ui/static-icon";
-import { CharacterCard } from "@/components/character/character-card";
+import { CharacterCard } from "@/components/trickcal/character/character-card";
 import { Button } from "@/components/ui/button";
 import { ELEMENTS, ELEMENT_ICONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";

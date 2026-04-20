@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { HeaderSearch, type SearchCharacter } from "@/components/layout/header-search";
-import { HeaderLogo } from "@/components/layout/header-logo";
+import { HeaderSearch, type SearchCharacter } from "@/components/trickcal/layout/header-search";
+import { HeaderLogo } from "@/components/trickcal/layout/header-logo";
 
 interface HeaderProps {
   characters: SearchCharacter[];
