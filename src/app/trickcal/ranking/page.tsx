@@ -53,17 +53,24 @@ export interface TrendingCharacter {
 export default async function RankingPage() {
   const supabase = createAdminClient();
 
-  // ランキングデータ + キャラ情報を並列取得
-  const [{ data: rankings }, { data: characters }] = await Promise.all([
-    supabase
-      .from("character_rankings")
-      .select("character_id, avg_rating, valid_votes_count, board_comments_count, rank")
-      .order("rank", { ascending: true, nullsFirst: false }),
-    supabase
-      .from("characters")
-      .select("id, slug, name, element, image_url")
-      .eq("is_hidden", false),
-  ]);
+  // ランキング + キャラ + 注目コメントを全て並列取得
+  const [{ data: rankings }, { data: characters }, { data: recentComments }] =
+    await Promise.all([
+      supabase
+        .from("character_rankings")
+        .select("character_id, avg_rating, valid_votes_count, board_comments_count, rank")
+        .order("rank", { ascending: true, nullsFirst: false }),
+      supabase
+        .from("characters")
+        .select("id, slug, name, element, image_url")
+        .eq("is_hidden", false),
+      supabase
+        .from("comments")
+        .select("character_id, user_hash, body, display_name, thumbs_up_count")
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false })
+        .limit(100),
+    ]);
 
   // キャラマップ
   const charMap = new Map<
@@ -124,14 +131,8 @@ export default async function RankingPage() {
     return b.avgRating - a.avgRating;
   });
 
-  // --- 注目のキャラクター（直近24時間）---
-  const { data: recentComments } = await supabase
-    .from("comments")
-    .select("character_id, user_hash, body, display_name, thumbs_up_count")
-    .eq("is_deleted", false)
-    .order("created_at", { ascending: false })
-    .limit(100);
-
+  // --- 注目のキャラクター集計 ---
+  // recentComments は Wave1 で取得済み
   // 連投ガード: 1キャラにつき同一 user_hash は最大3件まで
   const trendingMap = new Map<string, number>();
   const userCharCountMap = new Map<string, number>();
