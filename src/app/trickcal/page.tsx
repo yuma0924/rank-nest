@@ -152,8 +152,17 @@ function TeamIcon({ className }: { className?: string }) {
 export default async function Home() {
   const supabase = createAdminClient();
 
-  // --- 第1段: 人気キャラランキング (上位15件) + キャラ情報を並列取得 ---
-  const [{ data: rankings }, { data: characters }] = await Promise.all([
+  // --- 依存関係のないクエリを全て Wave1 で並列発火 ---
+  // (rankings, characters, 全コメント, 人気ティア, 人気編成)
+  // 以前は Wave2,4,5 が直列で 5 往復になっていた。iad1→Tokyo の
+  // 片道レイテンシ ~100ms × 5 = 500ms 以上を短縮。
+  const [
+    { data: rankings },
+    { data: characters },
+    { data: allComments },
+    { data: topTiers },
+    { data: topBuilds },
+  ] = await Promise.all([
     supabase
       .from("character_rankings")
       .select("character_id, avg_rating, valid_votes_count, board_comments_count, rank")
@@ -165,6 +174,26 @@ export default async function Home() {
       .from("characters")
       .select("id, slug, name, element, role, position, attack_type, race, rarity, image_url")
       .eq("is_hidden", false),
+    supabase
+      .from("comments")
+      .select("character_id, user_hash, body, display_name, thumbs_up_count, created_at")
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: false })
+      .limit(500),
+    supabase
+      .from("tiers")
+      .select("id, title, display_name, data, likes_count, created_at")
+      .eq("is_deleted", false)
+      .order("likes_count", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(2),
+    supabase
+      .from("builds")
+      .select("id, mode, members, element_label, title, display_name, comment, likes_count, dislikes_count, updated_at, build_comments(count)")
+      .eq("is_deleted", false)
+      .order("likes_count", { ascending: false })
+      .order("updated_at", { ascending: false })
+      .limit(30),
   ]);
 
   const charMap = new Map<
@@ -279,16 +308,8 @@ export default async function Home() {
 
   const topChar = rankedCharacters[0] ?? null;
 
-  // --- 第2段: 話題のキャラクター ---
-  // 全コメントを取得し、直近7日間のコメント数 → 全期間コメント数でソート
+  // --- 話題のキャラクター集計（直近7日優先）---
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: allComments } = await supabase
-    .from("comments")
-    .select("character_id, user_hash, body, display_name, thumbs_up_count, created_at")
-    .eq("is_deleted", false)
-    .order("created_at", { ascending: false })
-    .limit(500);
-
   const recentCountMap = new Map<string, number>();
   const totalCountMap = new Map<string, number>();
   const trendingCommentMap = new Map<
@@ -368,25 +389,7 @@ export default async function Home() {
     })
     .filter((c): c is TrendingChar => c !== null);
 
-  // --- みんなのティア表（人気上位2件）---
-  // --- ティア・編成・検索キャラを並列取得 ---
-  const [{ data: topTiers }, { data: topBuilds }] = await Promise.all([
-    supabase
-      .from("tiers")
-      .select("id, title, display_name, data, likes_count, created_at")
-      .eq("is_deleted", false)
-      .order("likes_count", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(2),
-    supabase
-      .from("builds")
-      .select("id, mode, members, element_label, title, display_name, comment, likes_count, dislikes_count, updated_at, build_comments(count)")
-      .eq("is_deleted", false)
-      .order("likes_count", { ascending: false })
-      .order("updated_at", { ascending: false })
-      .limit(30),
-  ]);
-
+  // topTiers / topBuilds は Wave1 で取得済み
   type TierPreview = {
     id: string;
     title: string | null;
