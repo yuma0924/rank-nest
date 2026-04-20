@@ -40,7 +40,7 @@ export const getCharacterBySlugCached = unstable_cache(
     const { data } = await supabase
       .from("characters")
       .select(
-        "id, slug, name, rarity, element, role, race, position, attack_type, stats, skills, metadata, image_url, favorite_item_id, is_hidden, created_at, updated_at, game_slug"
+        "id, slug, name, rarity, element, role, race, position, attack_type, stats, skills, metadata, image_url, favorite_item_id, is_hidden, created_at, updated_at"
       )
       .eq("slug", slug)
       .eq("is_hidden", false)
