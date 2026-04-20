@@ -8,14 +8,14 @@ export function HeaderLogo() {
   const pathname = usePathname();
 
   const handleClick = (e: React.MouseEvent) => {
-    if (pathname === "/") {
+    if (pathname === "/trickcal") {
       e.preventDefault();
       window.location.reload();
     }
   };
 
   return (
-    <Link href="/" onClick={handleClick} className="group flex items-center gap-2.5">
+    <Link href="/trickcal" onClick={handleClick} className="group flex items-center gap-2.5">
       <Image
         src="/logo.png"
         alt="トリッカルランキング"

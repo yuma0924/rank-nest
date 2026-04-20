@@ -65,7 +65,7 @@ export async function generateMetadata({
     title: `${title} | みんなのティア表 | みんなで決めるトリッカルランキング`,
     description: `トリッカルのティア表「${title}」を見る`,
     alternates: {
-      canonical: `/tiers/${id}`,
+      canonical: `/trickcal/tiers/${id}`,
     },
   };
 }

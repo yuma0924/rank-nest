@@ -916,7 +916,7 @@ export function CharacterDetailClient({
 
       {/* 一覧へ戻る */}
       <Link
-        href="/ranking"
+        href="/trickcal/ranking"
         className="mt-10 flex items-center justify-center gap-2 rounded-2xl border border-border-primary bg-bg-card py-3 text-sm font-medium text-text-primary transition-colors hover:bg-bg-card-hover"
       >
         <svg className="h-5 w-5 text-[#ffb900]" fill="currentColor" viewBox="0 0 24 24">
@@ -929,7 +929,7 @@ export function CharacterDetailClient({
       <section className="!mt-10 space-y-3">
         <p className="text-xs md:text-sm font-bold text-text-tertiary">他のランキングもチェック</p>
         <Link
-          href="/tiers"
+          href="/trickcal/tiers"
           className="flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-[rgba(144,72,212,0.15)] to-[rgba(212,64,138,0.15)] border border-[rgba(144,72,212,0.1)] px-4 py-3 transition-colors hover:from-[rgba(144,72,212,0.25)] hover:to-[rgba(212,64,138,0.25)] cursor-pointer"
         >
           <span
@@ -956,7 +956,7 @@ export function CharacterDetailClient({
           </svg>
         </Link>
         <Link
-          href="/builds"
+          href="/trickcal/builds"
           className="flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-[rgba(59,130,246,0.15)] to-[rgba(6,182,212,0.15)] border border-[rgba(59,130,246,0.1)] px-4 py-3 transition-colors hover:from-[rgba(59,130,246,0.25)] hover:to-[rgba(6,182,212,0.25)] cursor-pointer"
         >
           <span

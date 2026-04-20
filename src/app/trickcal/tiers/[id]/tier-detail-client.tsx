@@ -1,60 +1,27 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { StaticIcon } from "@/components/ui/static-icon";
-import { Button } from "@/components/ui/button";
-
-import { CharacterIcon } from "@/components/character/character-icon";
+import { TIER_LABELS } from "@/lib/constants";
+import type { TierLabel } from "@/lib/constants";
+import { TierRow } from "@/components/tier/tier-row";
+import { TierLikeButton } from "@/components/tier/tier-like-button";
 import { ThumbsUpDown } from "@/components/reaction/thumbs-up-down";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ELEMENT_ICONS, BUILD_MODE_LABEL_MAP } from "@/lib/constants";
-import type { BuildMode } from "@/lib/constants";
 import { useToast, Toast } from "@/components/ui/toast";
 
-type CharacterInfo = {
+type CharacterData = {
   id: string;
   name: string;
   slug: string;
   element: string | null;
-  position: string | null;
   image_url: string | null;
-  is_hidden: boolean;
-};
-
-
-type BuildDetail = {
-  id: string;
-  mode: BuildMode;
-  party_size: number;
-  element_label: string | null;
-  title: string | null;
-  display_name: string | null;
-  comment: string;
-  likes_count: number;
-  dislikes_count: number;
-  created_at: string;
-  updated_at: string;
-  members: (string | null)[];
-  members_detail: CharacterInfo[];
-};
-
-type SimilarBuild = {
-  id: string;
-  mode: BuildMode;
-  title: string | null;
-  display_name: string | null;
-  comment: string;
-  element_label: string | null;
-  likes_count: number;
-  members_detail: CharacterInfo[];
-  updated_at: string;
 };
 
 type CommentItem = {
   id: string;
-  build_id: string;
+  tier_id: string;
   display_name: string | null;
   body: string;
   thumbs_up_count: number;
@@ -79,41 +46,36 @@ function getKarmaClass(likesCount: number, dislikesCount: number): string {
   return "";
 }
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffMinutes < 1) return "たった今";
-  if (diffMinutes < 60) return `${diffMinutes}分前`;
-  if (diffHours < 24) return `${diffHours}時間前`;
-  if (diffDays < 30) return `${diffDays}日前`;
-  return date.toLocaleDateString("ja-JP");
-}
-
-interface BuildDetailClientProps {
-  build: BuildDetail;
-  similarBuilds: SimilarBuild[];
+interface TierDetailClientProps {
+  tier: {
+    id: string;
+    title: string | null;
+    display_name: string | null;
+    description: string | null;
+    data: Record<string, string[]>;
+    likes_count: number;
+    created_at: string;
+  };
+  characters: Record<string, CharacterData>;
   initialComments?: {
     comments: CommentItem[];
     hasMore: boolean;
   };
 }
 
-export function BuildDetailClient({
-  build: initialBuild,
-  similarBuilds,
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("ja-JP");
+}
+
+export function TierDetailClient({
+  tier: initialTier,
+  characters,
   initialComments,
-}: BuildDetailClientProps) {
-  const [build, setBuild] = useState(initialBuild);
-  const searchParams = useSearchParams();
-  const rankParam = searchParams.get("rank");
-  const isTopRank = rankParam === "1";
-  const isSecondRank = rankParam === "2";
-  const [userReaction, setUserReaction] = useState<"up" | "down" | null>(null);
+}: TierDetailClientProps) {
+  const [tier, setTier] = useState(initialTier);
+  const [userLiked, setUserLiked] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [deleted, setDeleted] = useState(false);
 
   // コメントフォーム開閉
   const [commentFormOpen, setCommentFormOpen] = useState(false);
@@ -134,13 +96,117 @@ export function BuildDetailClient({
 
   // 通報
   const [reportTarget, setReportTarget] = useState<{
-    type: "build" | "build_comment";
+    type: "tier_comment";
     id: string;
   } | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
 
+  // 初期状態取得
+  useEffect(() => {
+    async function fetchStatus() {
+      try {
+        const res = await fetch(`/api/tiers/${tier.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setUserLiked(data.tier.user_liked);
+          setIsOwner(data.tier.is_owner);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    fetchStatus();
+  }, [tier.id]);
+
+  const handleToggleLike = async () => {
+    const prevLiked = userLiked;
+    const prevCount = tier.likes_count;
+    const newLiked = !prevLiked;
+    const newCount = newLiked ? prevCount + 1 : prevCount - 1;
+
+    // 楽観的更新
+    setUserLiked(newLiked);
+    setTier((prev) => ({ ...prev, likes_count: newCount }));
+
+    try {
+      const res = await fetch(`/api/tiers/${tier.id}/reactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reaction_type: newLiked ? "up" : null,
+        }),
+      });
+      if (!res.ok) {
+        setUserLiked(prevLiked);
+        setTier((prev) => ({ ...prev, likes_count: prevCount }));
+      }
+    } catch {
+      setUserLiked(prevLiked);
+      setTier((prev) => ({ ...prev, likes_count: prevCount }));
+    }
+  };
+
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
+  const shareMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!shareMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        shareMenuRef.current &&
+        !shareMenuRef.current.contains(e.target as Node)
+      ) {
+        setShareMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [shareMenuOpen]);
+
+  const shareUrl = `https://rank-nest.com/trickcal/tiers/${tier.id}`;
+  const shareText = `「${tier.title || "無題のティア"}」のティア表をチェック！`;
+
+  const handleShareX = () => {
+    setShareMenuOpen(false);
+    const params = new URLSearchParams({
+      text: shareText,
+      url: shareUrl,
+      hashtags: "トリッカルランキング",
+    });
+    const a = document.createElement("a");
+    a.href = `https://twitter.com/intent/tweet?${params.toString()}`;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.click();
+  };
+
+  const handleCopyUrl = async () => {
+    setShareMenuOpen(false);
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast("URLをコピーしました");
+    } catch {
+      showToast("コピーに失敗しました");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("このティアを削除しますか？")) return;
+    try {
+      const res = await fetch(`/api/tiers/${tier.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setDeleted(true);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  // コメント取得
   const fetchComments = useCallback(
     async (cursorId?: string) => {
       setCommentsLoading(true);
@@ -149,7 +215,7 @@ export function BuildDetailClient({
         if (cursorId) params.set("cursor", cursorId);
 
         const res = await fetch(
-          `/api/builds/${build.id}/comments?${params.toString()}`
+          `/api/tiers/${tier.id}/comments?${params.toString()}`
         );
         if (!res.ok) return;
 
@@ -168,7 +234,7 @@ export function BuildDetailClient({
         setCommentsLoaded(true);
       }
     },
-    [build.id]
+    [tier.id]
   );
 
   // 初回のみ取得（initialCommentsがあればスキップ）
@@ -181,50 +247,6 @@ export function BuildDetailClient({
     fetchComments();
   }, [fetchComments]);
 
-
-  // 初期リアクション状態を取得
-  useEffect(() => {
-    async function fetchReaction() {
-      try {
-        const res = await fetch(`/api/builds/${build.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setUserReaction(data.build.user_reaction);
-        }
-      } catch {
-        // ignore
-      }
-    }
-    fetchReaction();
-  }, [build.id]);
-
-  const handleBuildReaction = async (reaction: "up" | "down" | null) => {
-    // 楽観的更新
-    const prevReaction = userReaction;
-    const prevBuild = { likes_count: build.likes_count, dislikes_count: build.dislikes_count };
-    let { likes_count, dislikes_count } = build;
-    if (prevReaction === "up") likes_count--;
-    if (prevReaction === "down") dislikes_count--;
-    if (reaction === "up") likes_count++;
-    if (reaction === "down") dislikes_count++;
-    setBuild((prev) => ({ ...prev, likes_count, dislikes_count }));
-    setUserReaction(reaction);
-
-    try {
-      const res = await fetch(`/api/builds/${build.id}/reactions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reaction_type: reaction }),
-      });
-      if (!res.ok) {
-        setBuild((prev) => ({ ...prev, ...prevBuild }));
-        setUserReaction(prevReaction);
-      }
-    } catch {
-      setBuild((prev) => ({ ...prev, ...prevBuild }));
-      setUserReaction(prevReaction);
-    }
-  };
 
   const handleCommentReaction = async (
     commentId: string,
@@ -248,7 +270,7 @@ export function BuildDetailClient({
 
     try {
       const res = await fetch(
-        `/api/builds/${build.id}/comments/${commentId}/reactions`,
+        `/api/tiers/${tier.id}/comments/${commentId}/reactions`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -286,7 +308,7 @@ export function BuildDetailClient({
 
     setCommentSubmitting(true);
     try {
-      const res = await fetch(`/api/builds/${build.id}/comments`, {
+      const res = await fetch(`/api/tiers/${tier.id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -343,143 +365,134 @@ export function BuildDetailClient({
     }
   };
 
-  const karmaClass = getKarmaClass(build.likes_count, build.dislikes_count);
+  if (deleted) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4">
+        <p className="text-text-secondary">ティアを削除しました</p>
+        <Link
+          href="/trickcal/tiers"
+          className="text-sm text-accent hover:underline"
+        >
+          一覧に戻る
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="pt-2 space-y-6">
-      {/* 編成情報カード */}
-      <div className={cn(
-        "relative rounded-2xl border p-4 md:max-w-xl",
-        isTopRank
-          ? "border-[rgba(252,211,77,0.5)] bg-bg-card-alpha"
-          : isSecondRank
-            ? "border-[rgba(192,192,210,0.5)] bg-bg-card-alpha"
-            : "border-border-primary bg-gradient-to-b from-bg-card-alpha to-bg-card-alpha-lighter",
-        karmaClass
-      )}>
-        {(isTopRank || isSecondRank) && (
-          <div className="absolute -top-3 left-3 flex items-center gap-1 rounded-full bg-bg-input px-2 py-0.5 md:gap-1.5 md:px-2.5 md:py-1">
-            <svg className={cn("h-3.5 w-3.5 md:h-4 md:w-4", isTopRank ? "text-star" : "text-rank-silver")} viewBox="0 0 24 24" fill="currentColor">
-              <path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66-.23-.45-.52-.86-.88-1.22L14 2 7.59 8.41C7.21 8.79 7 9.3 7 9.83v7.84C7 18.95 8.05 20 9.34 20h8.11c.7 0 1.36-.37 1.72-.97l2.66-6.15z" />
-            </svg>
-            <span className={cn("text-[10px] md:text-xs font-bold", isTopRank ? "text-star" : "text-rank-silver")}>高評価</span>
-          </div>
+    <div className="space-y-6">
+      {/* ヘッダー */}
+      <div className="flex items-center justify-between">
+        <h1 className="flex items-center gap-3 pl-2 text-xl font-bold text-text-primary">
+          <svg className="h-5 w-5 shrink-0" viewBox="0 0 16 16" fill="none">
+            <rect x="0" y="0.5" width="3" height="3" rx="0.5" fill="#ef4444" />
+            <rect x="4" y="0.5" width="12" height="3" rx="0.5" fill="currentColor" className="text-text-muted" />
+            <rect x="0" y="4.5" width="3" height="3" rx="0.5" fill="#f97316" />
+            <rect x="4" y="4.5" width="9" height="3" rx="0.5" fill="currentColor" className="text-text-muted" />
+            <rect x="0" y="8.5" width="3" height="3" rx="0.5" fill="#eab308" />
+            <rect x="4" y="8.5" width="6" height="3" rx="0.5" fill="currentColor" className="text-text-muted" />
+            <rect x="0" y="12.5" width="3" height="3" rx="0.5" fill="#22c55e" />
+            <rect x="4" y="12.5" width="4" height="3" rx="0.5" fill="currentColor" className="text-text-muted" />
+          </svg>
+          {tier.title || "無題のティア"}
+        </h1>
+        {isOwner && (
+          <button
+            onClick={handleDelete}
+            className="mr-2 shrink-0 rounded-lg border border-border-primary bg-bg-tertiary px-2.5 py-1 text-xs text-text-muted transition-colors hover:text-thumbs-down hover:border-thumbs-down/30 cursor-pointer"
+          >
+            削除
+          </button>
         )}
-        {/* タイトル + 属性アイコン + モード + 通報 */}
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h1 className="min-w-0 truncate text-sm font-bold text-text-primary">
-            {build.title || BUILD_MODE_LABEL_MAP[build.mode]}
-          </h1>
-          <div className="flex shrink-0 items-center gap-1.5">
-            {build.members_detail
-              .map((m) => m.element)
-              .filter((e, i, arr) => e && arr.indexOf(e) === i)
-              .map((el) => (
-                ELEMENT_ICONS[el as string] ? (
-                  <StaticIcon
-                    key={el}
-                    src={ELEMENT_ICONS[el as string]}
-                    alt={el as string}
-                    width={18}
-                    height={18}
-                    className="h-[18px] w-[18px]"
-                  />
-                ) : null
-              ))}
-            <span className="rounded-md bg-bg-card-alpha-light px-2 py-0.5 text-[10px] font-bold text-text-muted">
-              {BUILD_MODE_LABEL_MAP[build.mode]}
-            </span>
-            <button
-              onClick={() => setReportTarget({ type: "build", id: build.id })}
-              className="text-[10px] text-text-muted/50 hover:text-thumbs-down cursor-pointer"
-            >
-              通報
-            </button>
-          </div>
-        </div>
+      </div>
 
-        {/* キャラ編成グリッド */}
-        {(() => {
-          const charMap = new Map(build.members_detail.map((c) => [c.id, c]));
-          const slots: (CharacterInfo | null)[] = build.members.map(
-            (id) => (id ? charMap.get(id) ?? null : null)
-          );
-          while (slots.length < 9) slots.push(null);
-          const rowCount = 3;
-          const hasContent = (rowIdx: number) =>
-            [0, 1, 2].some((colIdx) => slots[colIdx * rowCount + rowIdx] !== null);
-
+      {/* ティア表 */}
+      <div className="overflow-hidden rounded-2xl border border-border-primary bg-bg-card">
+        {TIER_LABELS.map((label) => {
+          const charIds = tier.data[label] ?? [];
+          const charData = charIds
+            .map((id) => characters[id])
+            .filter((c): c is CharacterData => !!c);
           return (
-            <div className="mb-2 overflow-hidden rounded-[14px] border border-border-primary">
-              <div className="grid grid-cols-3 bg-bg-inset">
-                <span className="border-r border-border-primary py-1 text-center text-[10px] font-bold text-text-tertiary">後列</span>
-                <span className="border-r border-border-primary py-1 text-center text-[10px] font-bold text-text-tertiary">中列</span>
-                <span className="py-1 text-center text-[10px] font-bold text-text-tertiary">前列</span>
-              </div>
-              {Array.from({ length: rowCount }).map((_, rowIdx) => {
-                if (!hasContent(rowIdx)) return null;
-                return (
-                  <div key={rowIdx} className={cn("grid grid-cols-3", "border-b border-border-primary last:border-b-0")}>
-                    {[0, 1, 2].map((colIdx) => {
-                      const char = slots[colIdx * rowCount + rowIdx];
-                      return (
-                        <div key={colIdx} className={cn(
-                          "flex flex-col items-center gap-0.5 pt-2 pb-1.5",
-                          colIdx < 2 && "border-r border-border-primary"
-                        )}>
-                          {char ? (
-                            <Link href={char.slug ? `/characters/${char.slug}` : "#"} className="flex flex-col items-center gap-0.5">
-                              <CharacterIcon
-                                name={char.name}
-                                imageUrl={char.image_url}
-                                isHidden={char.is_hidden}
-                                size="md"
-                              />
-                              <span className="max-w-20 truncate text-center text-[10px] font-bold text-text-tertiary">
-                                {char.name}
-                              </span>
-                            </Link>
-                          ) : (
-                            <div className="h-16 w-16" />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
+            <TierRow
+              key={label}
+              label={label as TierLabel}
+              characters={charData.map((c) => ({
+                id: c.id,
+                name: c.name,
+                image_url: c.image_url,
+              }))}
+              iconClassName="h-14 w-14"
+            />
           );
-        })()}
-
-        {/* コメント */}
-        <div className="mx-0.5 flex flex-col rounded-[10px] bg-bg-inset border border-border-primary px-2.5 py-2 min-h-[76px]">
-          <p className="whitespace-pre-wrap text-[11px] md:text-xs text-text-primary leading-relaxed">
-            {build.comment}
-          </p>
-          <div className="mt-auto pt-1">
-            {build.display_name && (
-              <span className="text-[10px] md:text-xs text-text-muted">— {build.display_name}</span>
+        })}
+        {/* フッター */}
+        <div className="flex items-start justify-between gap-3 border-t border-border-primary bg-bg-tertiary/50 px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 text-xs text-text-muted">
+              {tier.display_name && (
+                <>
+                  <span className="font-semibold text-text-primary">{tier.display_name}</span>
+                  <span aria-hidden>·</span>
+                </>
+              )}
+              <span>{formatDate(tier.created_at)}</span>
+            </div>
+            {tier.description && (
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+                {tier.description}
+              </p>
             )}
           </div>
-        </div>
-
-        {/* フッター: 日時 + リアクション */}
-        <div className="mt-2 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs md:text-sm text-text-muted">
-            <span>{formatDate(build.updated_at)}</span>
+          <div className="flex items-center gap-2">
+            <div className="relative" ref={shareMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShareMenuOpen((v) => !v)}
+                aria-label="共有"
+                className="flex items-center gap-1 rounded-lg border border-border-primary bg-bg-tertiary px-2.5 py-1 text-xs text-text-muted transition-colors hover:text-text-primary cursor-pointer"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                共有
+              </button>
+              {shareMenuOpen && (
+                <div className="absolute right-0 bottom-full z-20 mb-2 w-44 overflow-hidden rounded-xl border border-border-primary bg-bg-card shadow-[0_12px_32px_rgba(0,0,0,0.6)] ring-1 ring-white/5 dark:ring-white/10">
+                  <button
+                    type="button"
+                    onClick={handleShareX}
+                    className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm font-semibold text-text-primary transition-colors hover:bg-bg-card-hover cursor-pointer"
+                  >
+                    <svg className="h-4 w-4 text-text-primary" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    Xで共有
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyUrl}
+                    className="flex w-full items-center gap-2.5 border-t border-border-primary px-4 py-3 text-left text-sm font-semibold text-text-primary transition-colors hover:bg-bg-card-hover cursor-pointer"
+                  >
+                    <svg className="h-4 w-4 text-text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    URLをコピー
+                  </button>
+                </div>
+              )}
+            </div>
+            <TierLikeButton
+              likesCount={tier.likes_count}
+              userLiked={userLiked}
+              onToggle={handleToggleLike}
+            />
           </div>
-          <ThumbsUpDown
-            thumbsUpCount={build.likes_count}
-            thumbsDownCount={build.dislikes_count}
-            userReaction={userReaction}
-            onReact={handleBuildReaction}
-          />
         </div>
       </div>
 
       {/* コメント投稿 */}
-      <section>
+      <section className="mt-12">
         {!commentFormOpen ? (
           <div className="rounded-[14px] bg-gradient-to-r from-[rgba(246,51,154,0.1)] to-[rgba(255,32,86,0.1)] border border-accent-active/30 p-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
             <div className="flex items-center justify-between gap-3">
@@ -489,10 +502,10 @@ export function BuildDetailClient({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                   <span className="text-sm font-bold text-text-primary">
-                    この編成にコメントする
+                    コメントする
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-text-muted">感想や改善点を共有しよう</p>
+                <p className="mt-1 text-xs text-text-muted">感想や意見を共有しよう</p>
               </div>
               <button
                 onClick={() => setCommentFormOpen(true)}
@@ -559,93 +572,43 @@ export function BuildDetailClient({
         hasMoreComments={hasMoreComments}
         onLoadMore={() => { if (nextCursor) fetchComments(nextCursor); }}
         onReact={handleCommentReaction}
-        onReport={(id) => setReportTarget({ type: "build_comment", id })}
+        onReport={(id) => setReportTarget({ type: "tier_comment", id })}
       />
 
-      {/* 似ている編成 */}
-      {similarBuilds.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-center gap-3">
-            <div className="h-8 w-1 rounded-full bg-gradient-to-b from-[#e05aa8] to-[#f08a9a]" />
-            <h2 className="text-xl font-bold text-text-primary">似ている編成</h2>
-          </div>
-          <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
-            {similarBuilds.map((sb) => (
-              <Link
-                key={sb.id}
-                href={`/builds/${sb.id}`}
-                className="block rounded-2xl border border-border-primary bg-bg-card px-4 pt-2.5 pb-3 transition-colors hover:bg-bg-card-hover cursor-pointer"
-              >
-                {/* タイトル + 性格アイコン + モード */}
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate text-sm font-bold text-text-primary">
-                    {sb.title || BUILD_MODE_LABEL_MAP[sb.mode]}
-                  </span>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    {sb.members_detail
-                      .map((m) => m.element)
-                      .filter((e, i, arr) => e && arr.indexOf(e) === i)
-                      .map((el) => (
-                        ELEMENT_ICONS[el as string] ? (
-                          <StaticIcon
-                            key={el}
-                            src={ELEMENT_ICONS[el as string]}
-                            alt={el as string}
-                            width={16}
-                            height={16}
-                            className="h-4 w-4"
-                          />
-                        ) : null
-                      ))}
-                    <span className="rounded-md bg-bg-card-alpha-light px-2 py-0.5 text-[10px] font-bold text-text-muted">
-                      {BUILD_MODE_LABEL_MAP[sb.mode]}
-                    </span>
-                  </div>
-                </div>
-                {/* キャラアイコン */}
-                <div className="mb-2 flex gap-1">
-                  {sb.members_detail.map((char, i) => (
-                    <CharacterIcon
-                      key={`${char.id}-${i}`}
-                      name={char.name}
-                      imageUrl={char.image_url}
-                      isHidden={char.is_hidden}
-                      size="sm"
-                    />
-                  ))}
-                </div>
-                {/* 日時 + いいね数 */}
-                <div className="mt-1 flex items-center justify-between text-xs text-text-muted">
-                  <span>{formatDate(sb.updated_at)}</span>
-                  <span className="flex items-center gap-0.5 text-thumbs-up">
-                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66-.23-.45-.52-.86-.88-1.22L14 2 7.59 8.41C7.21 8.79 7 9.3 7 9.83v7.84C7 18.95 8.05 20 9.34 20h8.11c.7 0 1.36-.37 1.72-.97l2.66-6.15z" />
-                    </svg>
-                    {sb.likes_count}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 一覧へ戻る */}
+      {/* 自分もティアを作る */}
       <Link
-        href="/builds"
-        className="mt-10 flex items-center justify-center gap-2 rounded-2xl border border-border-primary bg-bg-card py-3 text-sm font-medium text-text-primary transition-colors hover:bg-bg-card-hover"
+        href="/trickcal/tiers/new"
+        className="mt-10 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#e05aa8] to-[#e87080] py-3 text-sm font-bold text-white shadow-[0px_10px_15px_0px_rgba(224,90,168,0.12),0px_4px_6px_0px_rgba(224,90,168,0.12)] transition-opacity hover:opacity-90"
       >
-        <svg className="h-5 w-5 text-[#3b82f6]" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
         </svg>
-        人気編成ランキングに戻る
+        ティア表を作成する
       </Link>
 
-      {/* ページ下部ナビリンク */}
+      {/* ティア一覧へ戻る */}
+      <Link
+        href="/trickcal/tiers"
+        className="flex items-center justify-center gap-2 rounded-2xl border border-border-primary bg-bg-card py-3 text-sm font-medium text-text-primary transition-colors hover:bg-bg-card-hover"
+      >
+        <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
+          <rect x="0" y="0.5" width="3" height="3" rx="0.5" fill="#ef4444" />
+          <rect x="4" y="0.5" width="12" height="3" rx="0.5" fill="currentColor" className="text-text-muted" />
+          <rect x="0" y="4.5" width="3" height="3" rx="0.5" fill="#f97316" />
+          <rect x="4" y="4.5" width="9" height="3" rx="0.5" fill="currentColor" className="text-text-muted" />
+          <rect x="0" y="8.5" width="3" height="3" rx="0.5" fill="#eab308" />
+          <rect x="4" y="8.5" width="6" height="3" rx="0.5" fill="currentColor" className="text-text-muted" />
+          <rect x="0" y="12.5" width="3" height="3" rx="0.5" fill="#22c55e" />
+          <rect x="4" y="12.5" width="4" height="3" rx="0.5" fill="currentColor" className="text-text-muted" />
+        </svg>
+        みんなのティア表に戻る
+      </Link>
+
+      {/* 他のページもチェック */}
       <section className="!mt-10 space-y-3">
-        <p className="text-xs md:text-sm font-bold text-text-tertiary">他のランキングもチェック</p>
+        <p className="text-xs md:text-sm font-bold text-text-tertiary">他のページもチェック</p>
         <Link
-          href="/ranking"
+          href="/trickcal/ranking"
           className="flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-[rgba(255,185,0,0.15)] to-[rgba(255,99,126,0.15)] border border-[rgba(255,185,0,0.1)] px-4 py-3 transition-colors hover:from-[rgba(255,185,0,0.25)] hover:to-[rgba(255,99,126,0.25)] cursor-pointer"
         >
           <span
@@ -665,27 +628,20 @@ export function BuildDetailClient({
           </svg>
         </Link>
         <Link
-          href="/tiers"
-          className="flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-[rgba(144,72,212,0.15)] to-[rgba(212,64,138,0.15)] border border-[rgba(144,72,212,0.1)] px-4 py-3 transition-colors hover:from-[rgba(144,72,212,0.25)] hover:to-[rgba(212,64,138,0.25)] cursor-pointer"
+          href="/trickcal/builds"
+          className="flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-[rgba(59,130,246,0.15)] to-[rgba(6,182,212,0.15)] border border-[rgba(59,130,246,0.1)] px-4 py-3 transition-colors hover:from-[rgba(59,130,246,0.25)] hover:to-[rgba(6,182,212,0.25)] cursor-pointer"
         >
           <span
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] shadow-[0px_4px_6px_0px_rgba(0,0,0,0.1)]"
-            style={{ backgroundImage: "linear-gradient(135deg, #9048d4, #d4408a)" }}
+            style={{ backgroundImage: "linear-gradient(135deg, #3b82f6, #06b6d4)" }}
           >
-            <svg className="h-5 w-5 text-white" viewBox="0 0 16 16" fill="none">
-              <rect x="0" y="0.5" width="3" height="3" rx="0.5" fill="white" opacity="0.7" />
-              <rect x="4" y="0.5" width="12" height="3" rx="0.5" fill="white" />
-              <rect x="0" y="4.5" width="3" height="3" rx="0.5" fill="white" opacity="0.7" />
-              <rect x="4" y="4.5" width="9" height="3" rx="0.5" fill="white" />
-              <rect x="0" y="8.5" width="3" height="3" rx="0.5" fill="white" opacity="0.7" />
-              <rect x="4" y="8.5" width="6" height="3" rx="0.5" fill="white" />
-              <rect x="0" y="12.5" width="3" height="3" rx="0.5" fill="white" opacity="0.7" />
-              <rect x="4" y="12.5" width="4" height="3" rx="0.5" fill="white" />
+            <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
             </svg>
           </span>
           <div className="flex-1">
-            <span className="block text-sm md:text-base font-bold text-text-primary">みんなのティア表</span>
-            <span className="text-[10px] md:text-xs text-text-muted">キャラをランク付けして共有</span>
+            <span className="block text-sm md:text-base font-bold text-text-primary">人気編成ランキング</span>
+            <span className="text-[10px] md:text-xs text-text-muted">人気のパーティ編成をチェックしよう</span>
           </div>
           <svg className="h-4 w-4 shrink-0 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -737,8 +693,6 @@ export function BuildDetailClient({
     </div>
   );
 }
-
-import { memo } from "react";
 
 const SortableCommentList = memo(function SortableCommentList({
   comments,

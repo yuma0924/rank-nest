@@ -121,7 +121,7 @@ export function Sidebar() {
 
       <div className="border-t border-border-primary px-2 py-3">
         <Link
-          href="/"
+          href="/trickcal"
           className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

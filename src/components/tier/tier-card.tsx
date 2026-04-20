@@ -57,7 +57,7 @@ export function TierCard({
 }: TierCardProps) {
   return (
     <div className="rounded-2xl border border-border-primary bg-gradient-to-b from-bg-card-alpha to-bg-card-alpha-lighter overflow-hidden transition-colors hover:from-bg-card-alpha hover:to-bg-card-alpha-light">
-      <Link href={`/tiers/${id}`} className="block">
+      <Link href={`/trickcal/tiers/${id}`} className="block">
         {/* ヘッダー */}
         <div className="px-3 pt-3 pb-2">
           <div className="flex items-center justify-between gap-2">
@@ -121,7 +121,7 @@ export function TierCard({
 
       {/* 全て表示 */}
       <div className="flex justify-center -mt-1 mb-0">
-        <Link href={`/tiers/${id}`} className="text-[10px] text-text-muted hover:text-text-primary transition-colors">
+        <Link href={`/trickcal/tiers/${id}`} className="text-[10px] text-text-muted hover:text-text-primary transition-colors">
           全て表示 ▼
         </Link>
       </div>

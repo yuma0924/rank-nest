@@ -10,29 +10,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     {
       url: baseUrl,
       lastModified: new Date(),
-      changeFrequency: "daily",
+      changeFrequency: "weekly",
       priority: 1,
     },
     {
-      url: `${baseUrl}/ranking`,
+      url: `${baseUrl}/trickcal`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.95,
+    },
+    {
+      url: `${baseUrl}/trickcal/ranking`,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/builds`,
+      url: `${baseUrl}/trickcal/tiers`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/trickcal/builds`,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/stats`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/guidelines`,
+      url: `${baseUrl}/trickcal/guidelines`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.3,
@@ -48,7 +54,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const characterPages: MetadataRoute.Sitemap = (characters ?? []).map(
     (char) => ({
-      url: `${baseUrl}/characters/${char.slug}`,
+      url: `${baseUrl}/trickcal/characters/${char.slug}`,
       lastModified: new Date(char.updated_at),
       changeFrequency: "weekly" as const,
       priority: 0.7,

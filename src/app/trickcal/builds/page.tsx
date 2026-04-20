@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   description:
     "トリッカルの人気編成ランキング。コンテンツ別の人気編成をチェック",
   alternates: {
-    canonical: "/builds",
+    canonical: "/trickcal/builds",
   },
 };
 
@@ -235,7 +235,7 @@ export default async function BuildsPage() {
             {trendingCharacters.map((char) => (
               <Link
                 key={char.id}
-                href={`/characters/${char.slug}`}
+                href={`/trickcal/characters/${char.slug}`}
                 className="flex flex-col overflow-hidden rounded-[14px] border border-border-primary bg-bg-card-alpha-light transition-colors hover:bg-bg-card-alpha cursor-pointer"
               >
                 {/* キャラ情報 */}
@@ -317,7 +317,7 @@ export default async function BuildsPage() {
       <section className="!mt-10 space-y-3">
         <p className="text-xs md:text-sm font-bold text-text-tertiary">他のランキングもチェック</p>
         <Link
-          href="/ranking"
+          href="/trickcal/ranking"
           className="flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-[rgba(255,185,0,0.15)] to-[rgba(255,99,126,0.15)] border border-[rgba(255,185,0,0.1)] px-4 py-3 transition-colors hover:from-[rgba(255,185,0,0.25)] hover:to-[rgba(255,99,126,0.25)] cursor-pointer"
         >
           <span
@@ -337,7 +337,7 @@ export default async function BuildsPage() {
           </svg>
         </Link>
         <Link
-          href="/tiers"
+          href="/trickcal/tiers"
           className="flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-[rgba(144,72,212,0.15)] to-[rgba(212,64,138,0.15)] border border-[rgba(144,72,212,0.1)] px-4 py-3 transition-colors hover:from-[rgba(144,72,212,0.25)] hover:to-[rgba(212,64,138,0.25)] cursor-pointer"
         >
           <span

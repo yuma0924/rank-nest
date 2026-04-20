@@ -90,7 +90,7 @@ export function MobileNav() {
           <div className="my-1 border-t border-border-secondary" />
 
           <Link
-            href="/"
+            href="/trickcal"
             onClick={() => setIsOpen(false)}
             className="block rounded-lg px-3 py-2.5 text-sm text-text-secondary hover:bg-bg-tertiary hover:text-text-primary"
           >

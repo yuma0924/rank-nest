@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description:
     "トリッカルランキングの利用規約・免責事項・プライバシーポリシーをご確認ください。",
   alternates: {
-    canonical: "/guidelines",
+    canonical: "/trickcal/guidelines",
   },
   openGraph: {
     title: `ガイドライン・利用規約 | ${SITE_NAME}`,
@@ -232,7 +232,7 @@ export default function GuidelinesPage() {
       {/* ホームに戻るボタン */}
       <div className="mt-10">
         <Link
-          href="/"
+          href="/trickcal"
           className="block w-full rounded-2xl border border-border-primary bg-bg-tertiary py-3 text-center text-sm font-medium text-text-primary transition-colors hover:bg-bg-card-hover"
         >
           ホームに戻る

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description:
     "トリッカルの人気キャラランキング。みんなの投票と評価で順位が決まる",
   alternates: {
-    canonical: "/ranking",
+    canonical: "/trickcal/ranking",
   },
 };
 

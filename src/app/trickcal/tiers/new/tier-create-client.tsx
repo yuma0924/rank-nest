@@ -193,7 +193,7 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
         return;
       }
 
-      router.push(`/tiers/${result.tier.id}`);
+      router.push(`/trickcal/tiers/${result.tier.id}`);
     } catch {
       setError("投稿に失敗しました");
     } finally {
@@ -336,7 +336,7 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
 
         {/* ティア一覧へ戻る */}
         <Link
-          href="/tiers"
+          href="/trickcal/tiers"
           className="mt-10 flex items-center justify-center gap-2 rounded-2xl border border-border-primary bg-gradient-to-b from-bg-card-alpha to-bg-card-alpha-lighter py-3 text-sm font-medium text-text-primary transition-colors hover:from-bg-card-alpha hover:to-bg-card-alpha-light"
         >
           <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">

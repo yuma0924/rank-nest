@@ -80,7 +80,7 @@ export async function generateMetadata({
     title: `${title} | 人気編成ランキング | みんなで決めるトリッカルランキング`,
     description: `トリッカルの編成「${title}」の詳細・コメント`,
     alternates: {
-      canonical: `/builds/${buildId}`,
+      canonical: `/trickcal/builds/${buildId}`,
     },
   };
 }

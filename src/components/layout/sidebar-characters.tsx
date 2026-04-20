@@ -58,7 +58,7 @@ export function SidebarCharacters({ characters }: SidebarCharactersProps) {
                 {chars.map((c) => (
                   <Link
                     key={c.id}
-                    href={`/characters/${c.slug}`}
+                    href={`/trickcal/characters/${c.slug}`}
                     className="flex items-center gap-1.5 rounded-lg px-1 py-1 transition-colors hover:bg-bg-card-hover"
                   >
                     {c.image_url ? (

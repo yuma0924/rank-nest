@@ -30,3 +30,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local-only data (contains secrets / large assets)
+/game-data/
+/supabase/.temp/

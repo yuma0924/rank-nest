@@ -159,7 +159,7 @@ export function TiersClient({ characters, allTiers }: TiersClientProps) {
           ))}
         </div>
         <Link
-          href="/tiers/new"
+          href="/trickcal/tiers/new"
           className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#e05aa8] to-[#e87080] px-4 py-2 text-xs font-bold text-white shadow-[0px_10px_15px_0px_rgba(224,90,168,0.12),0px_4px_6px_0px_rgba(224,90,168,0.12)] transition-opacity hover:opacity-90"
         >
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -176,7 +176,7 @@ export function TiersClient({ characters, allTiers }: TiersClientProps) {
             まだティアが投稿されていません
           </p>
           <Link
-            href="/tiers/new"
+            href="/trickcal/tiers/new"
             className="mt-3 inline-block rounded-xl bg-gradient-to-r from-[#e05aa8] to-[#e87080] px-6 py-2.5 text-sm font-bold text-white shadow-[0px_10px_15px_0px_rgba(224,90,168,0.12),0px_4px_6px_0px_rgba(224,90,168,0.12)] transition-opacity hover:opacity-90"
           >
             最初のティアを作成する
@@ -218,7 +218,7 @@ export function TiersClient({ characters, allTiers }: TiersClientProps) {
       <section className="!mt-10 space-y-3">
         <p className="text-xs md:text-sm font-bold text-text-tertiary">他のランキングもチェック</p>
         <Link
-          href="/ranking"
+          href="/trickcal/ranking"
           className="flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-[rgba(255,185,0,0.15)] to-[rgba(255,99,126,0.15)] border border-[rgba(255,185,0,0.1)] px-4 py-3 transition-colors hover:from-[rgba(255,185,0,0.25)] hover:to-[rgba(255,99,126,0.25)] cursor-pointer"
         >
           <span
@@ -238,7 +238,7 @@ export function TiersClient({ characters, allTiers }: TiersClientProps) {
           </svg>
         </Link>
         <Link
-          href="/builds"
+          href="/trickcal/builds"
           className="flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-[rgba(59,130,246,0.15)] to-[rgba(6,182,212,0.15)] border border-[rgba(59,130,246,0.1)] px-4 py-3 transition-colors hover:from-[rgba(59,130,246,0.25)] hover:to-[rgba(6,182,212,0.25)] cursor-pointer"
         >
           <span

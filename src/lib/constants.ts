@@ -1,5 +1,5 @@
 export const SITE_NAME = "みんなで決めるトリッカルランキング";
-export const SITE_DOMAIN = "rank-lab.com";
+export const SITE_DOMAIN = "rank-nest.com";
 export const DEFAULT_DISPLAY_NAME = "名無しの教主";
 
 export const ELEMENTS = ["純粋", "冷静", "狂気", "活発", "憂鬱"] as const;

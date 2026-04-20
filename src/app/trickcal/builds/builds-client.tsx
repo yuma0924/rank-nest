@@ -115,7 +115,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
     if (params.get("mode") === "general") params.delete("mode");
     if (params.get("sort") === "popular") params.delete("sort");
     const query = params.toString();
-    router.replace(query ? `?${query}` : "/builds", { scroll: false });
+    router.replace(query ? `?${query}` : "/trickcal/builds", { scroll: false });
   }, [searchParams, router]);
 
   const setMode = useCallback((newMode: BuildMode) => {
@@ -561,7 +561,7 @@ function BuildCard({
         </div>
       )}
       <Link
-        href={`/builds/${build.id}${isTop ? "?rank=1" : isSecond ? "?rank=2" : ""}`}
+        href={`/trickcal/builds/${build.id}${isTop ? "?rank=1" : isSecond ? "?rank=2" : ""}`}
         className="flex flex-1 flex-col cursor-pointer"
       >
         {/* タイトル + 属性アイコン + モード */}

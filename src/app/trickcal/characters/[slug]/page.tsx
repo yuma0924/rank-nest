@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${character.name} | みんなで決めるトリッカルランキング`,
     description: `${character.name}の性能・評価・みんなのコメント`,
     alternates: {
-      canonical: `/characters/${slug}`,
+      canonical: `/trickcal/characters/${slug}`,
     },
     openGraph: {
       images: character.image_url ? [{ url: character.image_url }] : undefined,

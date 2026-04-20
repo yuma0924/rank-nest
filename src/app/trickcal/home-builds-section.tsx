@@ -165,7 +165,7 @@ export function HomeBuildsSection({ builds, charMap }: HomeuildsSectionProps) {
             return (
               <Link
                 key={build.id}
-                href={`/builds/${build.id}`}
+                href={`/trickcal/builds/${build.id}`}
                 className="block rounded-2xl border border-border-primary bg-gradient-to-b from-bg-card-alpha to-bg-card-alpha-lighter p-4 transition-colors hover:from-bg-card-alpha hover:to-bg-card-alpha-light cursor-pointer"
               >
                 {/* タイトル + 属性アイコン + モード */}

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: "みんなのティア表 | みんなで決めるトリッカルランキング",
   description: "トリッカルのキャラクターをS〜Eの6段にランク付け。自分だけのティア表を作成・共有しよう",
   alternates: {
-    canonical: "/tiers",
+    canonical: "/trickcal/tiers",
   },
 };
 

@@ -75,7 +75,7 @@ export function HeaderSearch({ characters }: HeaderSearchProps) {
 
   const handleSelect = (slug: string) => {
     setOpen(false);
-    router.push(`/characters/${slug}`);
+    router.push(`/trickcal/characters/${slug}`);
   };
 
   return (

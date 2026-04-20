@@ -15,13 +15,13 @@ export function Header({ characters }: HeaderProps) {
         <HeaderLogo />
         <nav className="flex items-center gap-2">
           <div className="hidden md:flex items-center gap-4 mr-4">
-            <Link href="/ranking" className="text-sm md:text-base text-text-secondary hover:text-text-primary transition-colors">
+            <Link href="/trickcal/ranking" className="text-sm md:text-base text-text-secondary hover:text-text-primary transition-colors">
               ランキング
             </Link>
-            <Link href="/tiers" className="text-sm md:text-base text-text-secondary hover:text-text-primary transition-colors">
+            <Link href="/trickcal/tiers" className="text-sm md:text-base text-text-secondary hover:text-text-primary transition-colors">
               ティア
             </Link>
-            <Link href="/builds" className="text-sm md:text-base text-text-secondary hover:text-text-primary transition-colors">
+            <Link href="/trickcal/builds" className="text-sm md:text-base text-text-secondary hover:text-text-primary transition-colors">
               編成
             </Link>
           </div>

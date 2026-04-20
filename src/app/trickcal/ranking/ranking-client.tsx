@@ -55,7 +55,7 @@ export function RankingClient({
       params.set("element", value);
     }
     const query = params.toString();
-    router.replace(query ? `?${query}` : "/ranking", { scroll: false });
+    router.replace(query ? `?${query}` : "/trickcal/ranking", { scroll: false });
     setShowCount(INITIAL_SHOW_COUNT);
   }, [searchParams, router]);
 
@@ -118,7 +118,7 @@ export function RankingClient({
           <div className="-mt-3 flex items-stretch justify-between gap-4">
             {currentTop && (
               <Link
-                href={`/characters/${currentTop.slug}`}
+                href={`/trickcal/characters/${currentTop.slug}`}
                 className="inline-flex items-center rounded-2xl border border-[rgba(255,191,36,0.3)] bg-gradient-to-r from-[rgba(255,191,36,0.1)] to-[rgba(255,143,0,0.05)] px-5 py-3 transition-colors hover:from-[rgba(255,191,36,0.15)] cursor-pointer lg:pl-5 lg:pr-12"
               >
                 <span className="text-base text-text-primary">
@@ -244,7 +244,7 @@ export function RankingClient({
             {trendingCharacters.map((char) => (
               <Link
                 key={char.id}
-                href={`/characters/${char.slug}`}
+                href={`/trickcal/characters/${char.slug}`}
                 className="flex flex-col overflow-hidden rounded-[14px] border border-border-primary bg-bg-card-alpha-light transition-colors hover:bg-bg-card-alpha cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 p-2.5">
@@ -324,7 +324,7 @@ export function RankingClient({
       <section className="!mt-10 space-y-3">
         <p className="text-xs md:text-sm font-bold text-text-tertiary">他のランキングもチェック</p>
         <Link
-          href="/builds"
+          href="/trickcal/builds"
           className="flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-[rgba(59,130,246,0.15)] to-[rgba(6,182,212,0.15)] border border-[rgba(59,130,246,0.1)] px-4 py-3 transition-colors hover:from-[rgba(59,130,246,0.25)] hover:to-[rgba(6,182,212,0.25)] cursor-pointer"
         >
           <span
@@ -344,7 +344,7 @@ export function RankingClient({
           </svg>
         </Link>
         <Link
-          href="/tiers"
+          href="/trickcal/tiers"
           className="flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-[rgba(144,72,212,0.15)] to-[rgba(212,64,138,0.15)] border border-[rgba(144,72,212,0.1)] px-4 py-3 transition-colors hover:from-[rgba(144,72,212,0.25)] hover:to-[rgba(212,64,138,0.25)] cursor-pointer"
         >
           <span

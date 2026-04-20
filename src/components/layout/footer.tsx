@@ -32,7 +32,7 @@ export function Footer() {
             トリッカル・もちもちほっぺ大作戦の非公式ファンサイトです。みんなの投票とコメントでキャラクターの人気ランキングやおすすめ編成を共有できます。
           </p>
           <Link
-            href="/guidelines"
+            href="/trickcal/guidelines"
             className="text-base font-medium text-text-tertiary transition-colors hover:text-accent"
           >
             ガイドライン・利用規約
