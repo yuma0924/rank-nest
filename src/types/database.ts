@@ -90,6 +90,7 @@ export interface Database {
           is_deleted: boolean;
           thumbs_up_count: number;
           thumbs_down_count: number;
+          game_slug: string;
           created_at: string;
           updated_at: string;
         };
@@ -105,6 +106,7 @@ export interface Database {
           is_deleted?: boolean;
           thumbs_up_count?: number;
           thumbs_down_count?: number;
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -120,6 +122,7 @@ export interface Database {
           is_deleted?: boolean;
           thumbs_up_count?: number;
           thumbs_down_count?: number;
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -174,6 +177,7 @@ export interface Database {
           comment_id: string;
           user_hash: string;
           reaction_type: "up" | "down";
+          game_slug: string;
           created_at: string;
           updated_at: string;
         };
@@ -182,6 +186,7 @@ export interface Database {
           comment_id: string;
           user_hash: string;
           reaction_type: "up" | "down";
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -190,6 +195,7 @@ export interface Database {
           comment_id?: string;
           user_hash?: string;
           reaction_type?: "up" | "down";
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -259,6 +265,7 @@ export interface Database {
           likes_count: number;
           dislikes_count: number;
           is_deleted: boolean;
+          game_slug: string;
           created_at: string;
           updated_at: string;
         };
@@ -275,6 +282,7 @@ export interface Database {
           likes_count?: number;
           dislikes_count?: number;
           is_deleted?: boolean;
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -291,6 +299,7 @@ export interface Database {
           likes_count?: number;
           dislikes_count?: number;
           is_deleted?: boolean;
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -302,6 +311,7 @@ export interface Database {
           build_id: string;
           user_hash: string;
           reaction_type: "up" | "down";
+          game_slug: string;
           created_at: string;
           updated_at: string;
         };
@@ -310,6 +320,7 @@ export interface Database {
           build_id: string;
           user_hash: string;
           reaction_type: "up" | "down";
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -318,6 +329,7 @@ export interface Database {
           build_id?: string;
           user_hash?: string;
           reaction_type?: "up" | "down";
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -341,6 +353,7 @@ export interface Database {
           is_deleted: boolean;
           thumbs_up_count: number;
           thumbs_down_count: number;
+          game_slug: string;
           created_at: string;
           updated_at: string;
         };
@@ -353,6 +366,7 @@ export interface Database {
           is_deleted?: boolean;
           thumbs_up_count?: number;
           thumbs_down_count?: number;
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -365,6 +379,7 @@ export interface Database {
           is_deleted?: boolean;
           thumbs_up_count?: number;
           thumbs_down_count?: number;
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -384,6 +399,7 @@ export interface Database {
           build_comment_id: string;
           user_hash: string;
           reaction_type: "up" | "down";
+          game_slug: string;
           created_at: string;
           updated_at: string;
         };
@@ -392,6 +408,7 @@ export interface Database {
           build_comment_id: string;
           user_hash: string;
           reaction_type: "up" | "down";
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -400,6 +417,7 @@ export interface Database {
           build_comment_id?: string;
           user_hash?: string;
           reaction_type?: "up" | "down";
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -483,6 +501,7 @@ export interface Database {
           user_hash: string;
           likes_count: number;
           is_deleted: boolean;
+          game_slug: string;
           created_at: string;
           updated_at: string;
         };
@@ -495,6 +514,7 @@ export interface Database {
           user_hash: string;
           likes_count?: number;
           is_deleted?: boolean;
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -507,6 +527,7 @@ export interface Database {
           user_hash?: string;
           likes_count?: number;
           is_deleted?: boolean;
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -518,6 +539,7 @@ export interface Database {
           tier_id: string;
           user_hash: string;
           reaction_type: "up";
+          game_slug: string;
           created_at: string;
           updated_at: string;
         };
@@ -526,6 +548,7 @@ export interface Database {
           tier_id: string;
           user_hash: string;
           reaction_type?: "up";
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -534,6 +557,7 @@ export interface Database {
           tier_id?: string;
           user_hash?: string;
           reaction_type?: "up";
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -557,6 +581,7 @@ export interface Database {
           is_deleted: boolean;
           thumbs_up_count: number;
           thumbs_down_count: number;
+          game_slug: string;
           created_at: string;
           updated_at: string;
         };
@@ -569,6 +594,7 @@ export interface Database {
           is_deleted?: boolean;
           thumbs_up_count?: number;
           thumbs_down_count?: number;
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -581,6 +607,7 @@ export interface Database {
           is_deleted?: boolean;
           thumbs_up_count?: number;
           thumbs_down_count?: number;
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -600,6 +627,7 @@ export interface Database {
           tier_comment_id: string;
           user_hash: string;
           reaction_type: "up" | "down";
+          game_slug: string;
           created_at: string;
           updated_at: string;
         };
@@ -608,6 +636,7 @@ export interface Database {
           tier_comment_id: string;
           user_hash: string;
           reaction_type: "up" | "down";
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -616,6 +645,7 @@ export interface Database {
           tier_comment_id?: string;
           user_hash?: string;
           reaction_type?: "up" | "down";
+          game_slug?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -637,6 +667,7 @@ export interface Database {
           user_hash: string;
           reason: string | null;
           status: "pending" | "resolved" | "dismissed";
+          game_slug: string;
           created_at: string;
         };
         Insert: {
@@ -646,6 +677,7 @@ export interface Database {
           user_hash: string;
           reason?: string | null;
           status?: "pending" | "resolved" | "dismissed";
+          game_slug?: string;
           created_at?: string;
         };
         Update: {
@@ -655,6 +687,7 @@ export interface Database {
           user_hash?: string;
           reason?: string | null;
           status?: "pending" | "resolved" | "dismissed";
+          game_slug?: string;
           created_at?: string;
         };
         Relationships: [];
