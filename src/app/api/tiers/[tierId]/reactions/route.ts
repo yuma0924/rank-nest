@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getUserHash,
@@ -100,9 +100,10 @@ export async function POST(
       .eq("id", tierId)
       .single();
 
-    // ISR キャッシュを無効化して、次のリロードで新しい likes_count が見えるようにする
+    // ルート ISR と unstable_cache データキャッシュ両方を無効化
     revalidatePath(`/trickcal/tiers/${tierId}`);
     revalidatePath("/trickcal/tiers");
+    revalidateTag("tiers");
 
     const headers = setCookieHeaders(cookieUuid, isNewCookie);
     return NextResponse.json(

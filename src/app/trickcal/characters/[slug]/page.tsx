@@ -18,9 +18,15 @@ interface Props {
 
 const getCharacter = getCharacterBySlugCached;
 
-// ISR: ビルド時に何も pre-render しないがオンデマンドで ISR を有効化
-export function generateStaticParams() {
-  return [];
+// キャラは admin が追加する時しか増えないので、ビルド時に全件 pre-render して
+// 初回訪問も即時配信。ビルド後に追加されたキャラは on-demand ISR で生成される。
+export async function generateStaticParams() {
+  const supabase = (await import("@/lib/supabase/admin")).createAdminClient();
+  const { data } = await supabase
+    .from("characters")
+    .select("slug")
+    .eq("is_hidden", false);
+  return (data ?? []).map((c) => ({ slug: c.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
