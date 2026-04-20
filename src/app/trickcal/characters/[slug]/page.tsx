@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserHashFromCookies } from "@/app/api/_helpers";
+import {
+  getCharacterBySlugCached,
+  getItemsByIdsCached,
+  getRelatedCharactersCached,
+} from "@/lib/trickcal/cached-queries";
 import { CharacterDetailClient } from "./character-detail-client";
 import type { Element } from "@/lib/trickcal/constants";
-import type { Character, Item } from "@/types/trickcal";
+import type { Item } from "@/types/trickcal";
 
 export const dynamic = "force-dynamic";
 
@@ -13,17 +17,7 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-const getCharacter = cache(async (slug: string) => {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("characters")
-    .select("id, slug, name, rarity, element, role, race, position, attack_type, stats, skills, metadata, image_url, favorite_item_id, is_hidden, created_at, updated_at")
-    .eq("slug", slug)
-    .eq("is_hidden", false)
-    .returns<Character[]>()
-    .single();
-  return data;
-});
+const getCharacter = getCharacterBySlugCached;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -100,21 +94,13 @@ export default async function CharacterPage({ params }: Props) {
     notFound();
   }
 
-  // ランキング情報 + 好物アイテム + 報酬アイテム + 初期コメントを並列取得
-  const [rankingResult, favoriteItemResult, rewardsResult, commentsResult] = await Promise.all([
+  // ランキング + 報酬 + コメント + 関連キャラ を並列取得（items と related-chars はキャッシュ）
+  const [rankingResult, rewardsResult, commentsResult, relatedChars] = await Promise.all([
     supabase
       .from("character_rankings")
       .select("avg_rating, valid_votes_count, board_comments_count, rank")
       .eq("character_id", character.id)
       .single(),
-    character.favorite_item_id
-      ? supabase
-          .from("items")
-          .select("id, name, image_url")
-          .eq("id", character.favorite_item_id)
-          .returns<Item[]>()
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
     supabase
       .from("character_rewards")
       .select("item_id, sort_order")
@@ -127,41 +113,25 @@ export default async function CharacterPage({ params }: Props) {
       .eq("is_deleted", false)
       .order("created_at", { ascending: false })
       .limit(21),
+    getRelatedCharactersCached(character.id, character.element, character.rarity),
   ]);
 
   const ranking = rankingResult.data;
-  const favItem = favoriteItemResult.data as Item | null;
 
-  // 報酬アイテムの詳細を取得
+  // 好物 + 報酬アイテムを1回のキャッシュ取得にまとめる
   const rewardItemIds = (rewardsResult.data ?? []).map((r) => r.item_id);
-  let rewardItems: Item[] = [];
-  if (rewardItemIds.length > 0) {
-    const { data } = await supabase
-      .from("items")
-      .select("id, name, image_url")
-      .in("id", rewardItemIds)
-      .returns<Item[]>();
-    // sort_order 順に並べ替え
-    const itemMap = new Map((data ?? []).map((i) => [i.id, i]));
-    rewardItems = rewardItemIds.map((id) => itemMap.get(id)).filter(Boolean) as Item[];
-  }
+  const itemIdsToFetch: string[] = [];
+  if (character.favorite_item_id) itemIdsToFetch.push(character.favorite_item_id);
+  for (const id of rewardItemIds) if (!itemIdsToFetch.includes(id)) itemIdsToFetch.push(id);
 
-  // 同属性・同レアリティの関連キャラ取得
-  type RelatedRow = { id: string; slug: string; name: string; element: string | null; image_url: string | null };
-  let relatedQuery = supabase
-    .from("characters")
-    .select("id, slug, name, element, image_url")
-    .eq("is_hidden", false)
-    .neq("id", character.id);
-
-  if (character.element) {
-    relatedQuery = relatedQuery.eq("element", character.element);
-  }
-  if (character.rarity) {
-    relatedQuery = relatedQuery.eq("rarity", character.rarity);
-  }
-
-  const { data: relatedChars } = await relatedQuery.returns<RelatedRow[]>();
+  const fetchedItems = await getItemsByIdsCached(itemIdsToFetch);
+  const itemMap = new Map(fetchedItems.map((i) => [i.id, i]));
+  const favItem = character.favorite_item_id
+    ? (itemMap.get(character.favorite_item_id) ?? null)
+    : null;
+  const rewardItems: Item[] = rewardItemIds
+    .map((id) => itemMap.get(id))
+    .filter(Boolean) as Item[];
 
   // 関連キャラのランキングを取得
   const relatedIds = (relatedChars ?? []).map((c) => c.id);

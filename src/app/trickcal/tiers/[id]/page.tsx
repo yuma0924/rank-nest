@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserHashFromCookies } from "@/app/api/_helpers";
+import { getAllVisibleCharacters } from "@/lib/trickcal/cached-queries";
 import { notFound } from "next/navigation";
 import { TierDetailClient } from "./tier-detail-client";
 
@@ -84,20 +85,21 @@ export default async function TierDetailPage({
     );
   }
 
-  // ティアに含まれる全キャラクター情報を取得
-  const allCharIds = Object.values(tier.data).flat();
-  let characters: Record<string, CharacterInfo> = {};
-
-  if (allCharIds.length > 0) {
-    const { data: chars } = await supabase
-      .from("characters")
-      .select("id, name, slug, element, image_url")
-      .in("id", allCharIds);
-
-    if (chars) {
-      characters = Object.fromEntries(
-        (chars as CharacterInfo[]).map((c) => [c.id, c])
-      );
+  // ティアに含まれるキャラクターをキャッシュから取得してフィルタ
+  const allCharIds = new Set(Object.values(tier.data).flat());
+  const characters: Record<string, CharacterInfo> = {};
+  if (allCharIds.size > 0) {
+    const allChars = await getAllVisibleCharacters();
+    for (const c of allChars) {
+      if (allCharIds.has(c.id)) {
+        characters[c.id] = {
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          element: c.element,
+          image_url: c.image_url,
+        };
+      }
     }
   }
 

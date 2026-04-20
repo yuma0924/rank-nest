@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cache, Suspense } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserHashFromCookies } from "@/app/api/_helpers";
+import { getAllVisibleCharacters } from "@/lib/trickcal/cached-queries";
 import { notFound } from "next/navigation";
 import { BuildDetailClient } from "./build-detail-client";
 
@@ -108,13 +109,10 @@ export default async function BuildDetailPage({
     );
   }
 
-  // 全キャラ + 似ている編成を並列取得
+  // 全キャラ（キャッシュ）+ 似ている編成を並列取得
   const actualMemberIds = build.members.filter((id): id is string => id !== null);
-  const [{ data: allChars }, { data: rawCandidates }] = await Promise.all([
-    supabase
-      .from("characters")
-      .select("id, name, slug, element, position, image_url, is_hidden")
-      .eq("is_hidden", false),
+  const [allChars, { data: rawCandidates }] = await Promise.all([
+    getAllVisibleCharacters(),
     supabase
       .from("builds")
       .select("*")
@@ -126,7 +124,7 @@ export default async function BuildDetailPage({
   ]);
 
   const charMap = new Map(
-    ((allChars as CharacterInfo[] | null) ?? []).map((c) => [c.id, c])
+    allChars.map((c) => [c.id, c as CharacterInfo])
   );
 
   const membersDetail = actualMemberIds.map(
