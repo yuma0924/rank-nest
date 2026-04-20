@@ -18,6 +18,11 @@ interface Props {
 
 const getCharacter = getCharacterBySlugCached;
 
+// ISR: ビルド時に何も pre-render しないがオンデマンドで ISR を有効化
+export function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const character = await getCharacter(slug);

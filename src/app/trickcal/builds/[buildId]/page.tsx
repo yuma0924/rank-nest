@@ -58,6 +58,11 @@ const getBuild = async (buildId: string): Promise<BuildData | null> => {
   return b as unknown as BuildData | null;
 };
 
+// ISR: ビルド時に何も pre-render しないがオンデマンドで ISR を有効化
+export function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({
   params,
 }: {

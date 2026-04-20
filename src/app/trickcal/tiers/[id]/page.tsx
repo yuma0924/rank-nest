@@ -19,6 +19,11 @@ type CharacterInfo = {
 
 const getTier = getTierByIdCached;
 
+// ISR: ビルド時に何も pre-render しないがオンデマンドで ISR を有効化
+export function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({
   params,
 }: {
