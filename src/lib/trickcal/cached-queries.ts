@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Character, Item } from "@/types/trickcal";
+import type { Character, Item, Tier, Build } from "@/types/trickcal";
 
 export type CharacterInfoCache = {
   id: string;
@@ -72,8 +72,9 @@ export const getItemsByIdsCached = unstable_cache(
 );
 
 /**
- * 同属性・同レアリティの関連キャラ一覧を5分キャッシュ取得。
- * キャラの所属は admin 更新時のみ変わる。
+ * 同属性・同レアリティの関連キャラ一覧 + 各キャラのランキング情報を
+ * FK join で1クエリに取得して2分キャッシュ。
+ * キャラの所属は admin 更新時のみ、ランキングは1日1回の再集計なので2分で十分。
  */
 export type RelatedCharacterRow = {
   id: string;
@@ -81,7 +82,57 @@ export type RelatedCharacterRow = {
   name: string;
   element: string | null;
   image_url: string | null;
+  avg_rating: number | null;
+  valid_votes_count: number;
 };
+
+type RawRelatedRow = {
+  id: string;
+  slug: string;
+  name: string;
+  element: string | null;
+  image_url: string | null;
+  character_rankings:
+    | { avg_rating: number | null; valid_votes_count: number | null }
+    | { avg_rating: number | null; valid_votes_count: number | null }[]
+    | null;
+};
+
+/**
+ * ティア本体を 10 秒キャッシュ。likes_count は頻繁に変わるが、
+ * クライアント側はいいね POST のレスポンスで即同期するので
+ * サーバー取得は 10 秒の staleness を許容してバースト負荷を緩和。
+ */
+export const getTierByIdCached = unstable_cache(
+  async (id: string): Promise<Tier | null> => {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("tiers")
+      .select("*")
+      .eq("id", id)
+      .single();
+    return (data as Tier | null) ?? null;
+  },
+  ["trickcal-tier-by-id"],
+  { revalidate: 10, tags: ["tiers"] }
+);
+
+/**
+ * 編成本体を 10 秒キャッシュ。同上の理由。
+ */
+export const getBuildByIdCached = unstable_cache(
+  async (id: string): Promise<Build | null> => {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("builds")
+      .select("*")
+      .eq("id", id)
+      .single();
+    return (data as Build | null) ?? null;
+  },
+  ["trickcal-build-by-id"],
+  { revalidate: 10, tags: ["builds"] }
+);
 
 export const getRelatedCharactersCached = unstable_cache(
   async (
@@ -92,14 +143,29 @@ export const getRelatedCharactersCached = unstable_cache(
     const supabase = createAdminClient();
     let q = supabase
       .from("characters")
-      .select("id, slug, name, element, image_url")
+      .select(
+        "id, slug, name, element, image_url, character_rankings(avg_rating, valid_votes_count)"
+      )
       .eq("is_hidden", false)
       .neq("id", excludeId);
     if (element) q = q.eq("element", element);
     if (rarity) q = q.eq("rarity", rarity);
-    const { data } = await q.returns<RelatedCharacterRow[]>();
-    return data ?? [];
+    const { data } = await q.returns<RawRelatedRow[]>();
+    return (data ?? []).map((c) => {
+      const rank = Array.isArray(c.character_rankings)
+        ? c.character_rankings[0] ?? null
+        : c.character_rankings;
+      return {
+        id: c.id,
+        slug: c.slug,
+        name: c.name,
+        element: c.element,
+        image_url: c.image_url,
+        avg_rating: rank?.avg_rating ?? null,
+        valid_votes_count: rank?.valid_votes_count ?? 0,
+      };
+    });
   },
-  ["trickcal-related-characters"],
-  { revalidate: 300, tags: ["characters"] }
+  ["trickcal-related-characters-with-rankings"],
+  { revalidate: 120, tags: ["characters", "rankings"] }
 );

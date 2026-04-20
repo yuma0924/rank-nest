@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserHashFromCookies } from "@/app/api/_helpers";
-import { getAllVisibleCharacters } from "@/lib/trickcal/cached-queries";
+import {
+  getAllVisibleCharacters,
+  getTierByIdCached,
+} from "@/lib/trickcal/cached-queries";
 import { notFound } from "next/navigation";
 import { TierDetailClient } from "./tier-detail-client";
 
@@ -16,28 +18,7 @@ type CharacterInfo = {
   image_url: string | null;
 };
 
-type TierData = {
-  id: string;
-  title: string | null;
-  display_name: string | null;
-  description: string | null;
-  data: Record<string, string[]>;
-  likes_count: number;
-  is_deleted: boolean;
-  created_at: string;
-  updated_at: string;
-  user_hash: string;
-};
-
-const getTier = cache(async (id: string) => {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("tiers")
-    .select("*")
-    .eq("id", id)
-    .single();
-  return data as TierData | null;
-});
+const getTier = getTierByIdCached;
 
 export async function generateMetadata({
   params,
@@ -71,7 +52,12 @@ export default async function TierDetailPage({
   const { id } = await params;
   const supabase = createAdminClient();
 
-  const tier = await getTier(id);
+  // Wave 1: tier + userHash + 全キャラ（キャッシュ）を全て並列開始
+  const [tier, userHash, allChars] = await Promise.all([
+    getTier(id),
+    getUserHashFromCookies(),
+    getAllVisibleCharacters(),
+  ]);
 
   if (!tier) {
     notFound();
@@ -85,27 +71,7 @@ export default async function TierDetailPage({
     );
   }
 
-  // ティアに含まれるキャラクターをキャッシュから取得してフィルタ
-  const allCharIds = new Set(Object.values(tier.data).flat());
-  const characters: Record<string, CharacterInfo> = {};
-  if (allCharIds.size > 0) {
-    const allChars = await getAllVisibleCharacters();
-    for (const c of allChars) {
-      if (allCharIds.has(c.id)) {
-        characters[c.id] = {
-          id: c.id,
-          name: c.name,
-          slug: c.slug,
-          element: c.element,
-          image_url: c.image_url,
-        };
-      }
-    }
-  }
-
-  // コメント + ユーザー固有状態を並列取得
-  const userHash = await getUserHashFromCookies();
-
+  // Wave 2: tier 確定後、コメントと user_liked を並列取得
   const [commentsResult, userLikedResult] = await Promise.all([
     supabase
       .from("tier_comments")
@@ -128,20 +94,33 @@ export default async function TierDetailPage({
   const commentsData = (commentsRaw ?? []).slice(0, 20);
   const hasMoreComments = (commentsRaw ?? []).length > 20;
 
-  // 各コメントに対するユーザーのリアクションを取得
-  let userCommentReactions = new Map<string, "up" | "down">();
-  if (userHash && commentsData.length > 0) {
-    const { data: reactions } = await supabase
-      .from("tier_comment_reactions")
-      .select("tier_comment_id, reaction_type")
-      .eq("user_hash", userHash)
-      .in("tier_comment_id", commentsData.map((c) => c.id));
-    if (reactions) {
-      userCommentReactions = new Map(
-        (reactions as { tier_comment_id: string; reaction_type: "up" | "down" }[]).map(
-          (r) => [r.tier_comment_id, r.reaction_type]
-        )
-      );
+  // Wave 3: user_comment_reactions を取得（コメントIDs が必要なので別ウェーブ）
+  const userCommentReactionsArr: { tier_comment_id: string; reaction_type: "up" | "down" }[] =
+    userHash && commentsData.length > 0
+      ? await supabase
+          .from("tier_comment_reactions")
+          .select("tier_comment_id, reaction_type")
+          .eq("user_hash", userHash)
+          .in("tier_comment_id", commentsData.map((c) => c.id))
+          .then((r) => (r.data ?? []) as { tier_comment_id: string; reaction_type: "up" | "down" }[])
+      : [];
+
+  const userCommentReactions = new Map(
+    userCommentReactionsArr.map((r) => [r.tier_comment_id, r.reaction_type])
+  );
+
+  // ティアに含まれるキャラだけをキャッシュ結果から抽出
+  const allCharIds = new Set(Object.values(tier.data).flat());
+  const characters: Record<string, CharacterInfo> = {};
+  for (const c of allChars) {
+    if (allCharIds.has(c.id)) {
+      characters[c.id] = {
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        element: c.element,
+        image_url: c.image_url,
+      };
     }
   }
 

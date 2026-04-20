@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
-import { cache, Suspense } from "react";
+import { Suspense } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserHashFromCookies } from "@/app/api/_helpers";
-import { getAllVisibleCharacters } from "@/lib/trickcal/cached-queries";
+import {
+  getAllVisibleCharacters,
+  getBuildByIdCached,
+} from "@/lib/trickcal/cached-queries";
 import { notFound } from "next/navigation";
 import { BuildDetailClient } from "./build-detail-client";
 
@@ -51,15 +54,10 @@ type SimilarBuild = {
   updated_at: string;
 };
 
-const getBuild = cache(async (buildId: string) => {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("builds")
-    .select("*")
-    .eq("id", buildId)
-    .single();
-  return data as BuildData | null;
-});
+const getBuild = async (buildId: string): Promise<BuildData | null> => {
+  const b = await getBuildByIdCached(buildId);
+  return b as unknown as BuildData | null;
+};
 
 export async function generateMetadata({
   params,
@@ -95,7 +93,12 @@ export default async function BuildDetailPage({
   const { buildId } = await params;
   const supabase = createAdminClient();
 
-  const build = await getBuild(buildId);
+  // Wave 1: build + userHash + 全キャラ（キャッシュ）を並列開始
+  const [build, userHash, allChars] = await Promise.all([
+    getBuild(buildId),
+    getUserHashFromCookies(),
+    getAllVisibleCharacters(),
+  ]);
 
   if (!build) {
     notFound();
@@ -109,19 +112,35 @@ export default async function BuildDetailPage({
     );
   }
 
-  // 全キャラ（キャッシュ）+ 似ている編成を並列取得
   const actualMemberIds = build.members.filter((id): id is string => id !== null);
-  const [allChars, { data: rawCandidates }] = await Promise.all([
-    getAllVisibleCharacters(),
-    supabase
-      .from("builds")
-      .select("*")
-      .eq("is_deleted", false)
-      .neq("id", buildId)
-      .eq("mode", build.mode)
-      .order("likes_count", { ascending: false })
-      .limit(20),
-  ]);
+
+  // Wave 2: similar builds + コメント + user_reaction を全部並列
+  const [{ data: rawCandidates }, commentsResult, userBuildReactionResult] =
+    await Promise.all([
+      supabase
+        .from("builds")
+        .select("*")
+        .eq("is_deleted", false)
+        .neq("id", buildId)
+        .eq("mode", build.mode)
+        .order("likes_count", { ascending: false })
+        .limit(20),
+      supabase
+        .from("build_comments")
+        .select("id, build_id, display_name, body, thumbs_up_count, thumbs_down_count, created_at, is_deleted")
+        .eq("build_id", buildId)
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false })
+        .limit(21),
+      userHash
+        ? supabase
+            .from("build_reactions")
+            .select("reaction_type")
+            .eq("build_id", buildId)
+            .eq("user_hash", userHash)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
 
   const charMap = new Map(
     allChars.map((c) => [c.id, c as CharacterInfo])
@@ -176,47 +195,24 @@ export default async function BuildDetailPage({
     updated_at: sb.updated_at,
   }));
 
-  // コメント + ユーザー固有状態を並列取得
-  const userHash = await getUserHashFromCookies();
-
-  const [commentsResult, userBuildReactionResult] = await Promise.all([
-    supabase
-      .from("build_comments")
-      .select("id, build_id, display_name, body, thumbs_up_count, thumbs_down_count, created_at, is_deleted")
-      .eq("build_id", buildId)
-      .eq("is_deleted", false)
-      .order("created_at", { ascending: false })
-      .limit(21),
-    userHash
-      ? supabase
-          .from("build_reactions")
-          .select("reaction_type")
-          .eq("build_id", buildId)
-          .eq("user_hash", userHash)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-  ]);
-
   const commentsRaw = commentsResult.data;
   const commentsData = (commentsRaw ?? []).slice(0, 20);
   const hasMoreComments = (commentsRaw ?? []).length > 20;
 
-  // 各コメントに対するユーザーのリアクションを取得
-  let userCommentReactions = new Map<string, "up" | "down">();
-  if (userHash && commentsData.length > 0) {
-    const { data: reactions } = await supabase
-      .from("build_comment_reactions")
-      .select("build_comment_id, reaction_type")
-      .eq("user_hash", userHash)
-      .in("build_comment_id", commentsData.map((c) => c.id));
-    if (reactions) {
-      userCommentReactions = new Map(
-        (reactions as { build_comment_id: string; reaction_type: "up" | "down" }[]).map(
-          (r) => [r.build_comment_id, r.reaction_type]
-        )
-      );
-    }
-  }
+  // Wave 3: user_comment_reactions（コメントIDs 判明後なので別ウェーブ）
+  const userCommentReactionsArr: { build_comment_id: string; reaction_type: "up" | "down" }[] =
+    userHash && commentsData.length > 0
+      ? await supabase
+          .from("build_comment_reactions")
+          .select("build_comment_id, reaction_type")
+          .eq("user_hash", userHash)
+          .in("build_comment_id", commentsData.map((c) => c.id))
+          .then((r) => (r.data ?? []) as { build_comment_id: string; reaction_type: "up" | "down" }[])
+      : [];
+
+  const userCommentReactions = new Map(
+    userCommentReactionsArr.map((r) => [r.build_comment_id, r.reaction_type])
+  );
 
   const initialUserReaction =
     (userBuildReactionResult.data as { reaction_type: "up" | "down" } | null)?.reaction_type ?? null;

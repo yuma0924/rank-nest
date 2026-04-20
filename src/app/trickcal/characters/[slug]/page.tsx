@@ -88,43 +88,66 @@ export default async function CharacterPage({ params }: Props) {
   const { slug } = await params;
   const supabase = createAdminClient();
 
-  const character = await getCharacter(slug);
+  // Wave 1: character + userHash を並列開始（userHash は cookies 読みなので即時）
+  const [character, userHash] = await Promise.all([
+    getCharacter(slug),
+    getUserHashFromCookies(),
+  ]);
 
   if (!character) {
     notFound();
   }
 
-  // ランキング + 報酬 + コメント + 関連キャラ を並列取得（items と related-chars はキャッシュ）
-  const [rankingResult, rewardsResult, commentsResult, relatedChars] = await Promise.all([
-    supabase
-      .from("character_rankings")
-      .select("avg_rating, valid_votes_count, board_comments_count, rank")
-      .eq("character_id", character.id)
-      .single(),
-    supabase
-      .from("character_rewards")
-      .select("item_id, sort_order")
-      .eq("character_id", character.id)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("comments")
-      .select("id, character_id, user_hash, comment_type, rating, body, display_name, is_latest_vote, is_deleted, thumbs_up_count, thumbs_down_count, created_at")
-      .eq("character_id", character.id)
-      .eq("is_deleted", false)
-      .order("created_at", { ascending: false })
-      .limit(21),
-    getRelatedCharactersCached(character.id, character.element, character.rarity),
-  ]);
+  // Wave 2: character に依存する全クエリを一気に並列
+  const [rankingResult, rewardsResult, commentsResult, relatedCharsWithRanking] =
+    await Promise.all([
+      supabase
+        .from("character_rankings")
+        .select("avg_rating, valid_votes_count, board_comments_count, rank")
+        .eq("character_id", character.id)
+        .single(),
+      supabase
+        .from("character_rewards")
+        .select("item_id, sort_order")
+        .eq("character_id", character.id)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("comments")
+        .select("id, character_id, user_hash, comment_type, rating, body, display_name, is_latest_vote, is_deleted, thumbs_up_count, thumbs_down_count, created_at")
+        .eq("character_id", character.id)
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false })
+        .limit(21),
+      getRelatedCharactersCached(character.id, character.element, character.rarity),
+    ]);
 
   const ranking = rankingResult.data;
+  const commentsData = (commentsResult.data ?? []).slice(0, 20);
+  const hasMoreComments = (commentsResult.data ?? []).length > 20;
 
-  // 好物 + 報酬アイテムを1回のキャッシュ取得にまとめる
+  // Wave 3: items と user_comment_reactions を並列
   const rewardItemIds = (rewardsResult.data ?? []).map((r) => r.item_id);
   const itemIdsToFetch: string[] = [];
   if (character.favorite_item_id) itemIdsToFetch.push(character.favorite_item_id);
   for (const id of rewardItemIds) if (!itemIdsToFetch.includes(id)) itemIdsToFetch.push(id);
 
-  const fetchedItems = await getItemsByIdsCached(itemIdsToFetch);
+  const [fetchedItems, userCommentReactionsArr] = await Promise.all([
+    getItemsByIdsCached(itemIdsToFetch),
+    userHash && commentsData.length > 0
+      ? supabase
+          .from("comment_reactions")
+          .select("comment_id, reaction_type")
+          .eq("user_hash", userHash)
+          .in(
+            "comment_id",
+            commentsData.map((c) => c.id)
+          )
+          .then((r) =>
+            (r.data ?? []) as { comment_id: string; reaction_type: "up" | "down" }[]
+          )
+      : Promise.resolve([] as { comment_id: string; reaction_type: "up" | "down" }[]),
+  ]);
+
   const itemMap = new Map(fetchedItems.map((i) => [i.id, i]));
   const favItem = character.favorite_item_id
     ? (itemMap.get(character.favorite_item_id) ?? null)
@@ -133,37 +156,19 @@ export default async function CharacterPage({ params }: Props) {
     .map((id) => itemMap.get(id))
     .filter(Boolean) as Item[];
 
-  // 関連キャラのランキングを取得
-  const relatedIds = (relatedChars ?? []).map((c) => c.id);
-  const { data: relatedRankings } = relatedIds.length > 0
-    ? await supabase
-        .from("character_rankings")
-        .select("character_id, avg_rating, valid_votes_count")
-        .in("character_id", relatedIds)
-    : { data: [] };
+  const userCommentReactions = new Map(
+    userCommentReactionsArr.map((r) => [r.comment_id, r.reaction_type])
+  );
 
-  const relatedRankMap = new Map<string, { avgRating: number; validVotesCount: number }>();
-  if (relatedRankings) {
-    for (const r of relatedRankings) {
-      relatedRankMap.set(r.character_id, {
-        avgRating: r.avg_rating,
-        validVotesCount: r.valid_votes_count,
-      });
-    }
-  }
-
-  const relatedCharacters: RelatedCharacter[] = (relatedChars ?? []).map((c) => {
-    const rr = relatedRankMap.get(c.id);
-    return {
-      id: c.id,
-      slug: c.slug,
-      name: c.name,
-      element: c.element as Element | null,
-      imageUrl: c.image_url,
-      avgRating: rr?.avgRating ?? null,
-      validVotesCount: rr?.validVotesCount ?? 0,
-    };
-  });
+  const relatedCharacters: RelatedCharacter[] = relatedCharsWithRanking.map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    name: c.name,
+    element: c.element as Element | null,
+    imageUrl: c.image_url,
+    avgRating: c.avg_rating,
+    validVotesCount: c.valid_votes_count,
+  }));
 
   const rawStats = (character.stats as Record<string, unknown>) ?? {};
   const stats: Record<string, number | null> = {};
@@ -177,8 +182,6 @@ export default async function CharacterPage({ params }: Props) {
   const relic: RelicInfo | null = relicRaw?.name
     ? { name: relicRaw.name, imageUrl: relicRaw.image_url ?? null, description: relicRaw.description ?? "", params: relicRaw.params ?? "" }
     : null;
-
-  // アイテム情報
 
   const characterDetail: CharacterDetail = {
     id: character.id,
@@ -202,27 +205,6 @@ export default async function CharacterPage({ params }: Props) {
     favoriteItem: favItem ? { name: favItem.name, imageUrl: favItem.image_url } : null,
     partTimeRewards: rewardItems.map((i) => ({ name: i.name, imageUrl: i.image_url })),
   };
-
-  const commentsData = (commentsResult.data ?? []).slice(0, 20);
-  const hasMoreComments = (commentsResult.data ?? []).length > 20;
-
-  // 各コメントに対するユーザーのリアクションを取得
-  const userHash = await getUserHashFromCookies();
-  let userCommentReactions = new Map<string, "up" | "down">();
-  if (userHash && commentsData.length > 0) {
-    const { data: reactions } = await supabase
-      .from("comment_reactions")
-      .select("comment_id, reaction_type")
-      .eq("user_hash", userHash)
-      .in("comment_id", commentsData.map((c) => c.id));
-    if (reactions) {
-      userCommentReactions = new Map(
-        (reactions as { comment_id: string; reaction_type: "up" | "down" }[]).map(
-          (r) => [r.comment_id, r.reaction_type]
-        )
-      );
-    }
-  }
 
   return (
     <CharacterDetailClient
