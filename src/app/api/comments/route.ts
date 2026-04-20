@@ -6,7 +6,7 @@ import {
   checkRateLimit,
   setCookieHeaders,
 } from "@/app/api/_helpers";
-import { DEFAULT_DISPLAY_NAME } from "@/lib/constants";
+import { DEFAULT_DISPLAY_NAME } from "@/lib/trickcal/constants";
 
 const MAX_BODY_LENGTH = 300;
 const MAX_BODY_LINES = 8;

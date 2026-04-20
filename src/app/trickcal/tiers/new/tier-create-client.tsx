@@ -16,8 +16,8 @@ import {
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 import { StaticIcon } from "@/components/ui/static-icon";
-import { TIER_LABELS, ELEMENTS, ELEMENT_ICONS } from "@/lib/constants";
-import type { TierLabel } from "@/lib/constants";
+import { TIER_LABELS, ELEMENTS, ELEMENT_ICONS } from "@/lib/trickcal/constants";
+import type { TierLabel } from "@/lib/trickcal/constants";
 import { cn } from "@/lib/utils";
 import { TierRow } from "@/components/trickcal/tier/tier-row";
 import { TierCharacterItem } from "@/components/trickcal/tier/tier-character-item";

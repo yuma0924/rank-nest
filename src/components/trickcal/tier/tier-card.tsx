@@ -1,8 +1,8 @@
 "use client";
 
-import { TIER_COLORS } from "@/lib/constants";
+import { TIER_COLORS } from "@/lib/trickcal/constants";
 import Link from "next/link";
-import type { TierLabel } from "@/lib/constants";
+import type { TierLabel } from "@/lib/trickcal/constants";
 import { CharacterIcon } from "@/components/trickcal/character/character-icon";
 import { TierLikeButton } from "@/components/trickcal/tier/tier-like-button";
 

@@ -3,8 +3,8 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 import { TierCharacterItem } from "@/components/trickcal/tier/tier-character-item";
-import type { TierLabel } from "@/lib/constants";
-import { TIER_COLORS } from "@/lib/constants";
+import type { TierLabel } from "@/lib/trickcal/constants";
+import { TIER_COLORS } from "@/lib/trickcal/constants";
 
 type CharacterData = {
   id: string;

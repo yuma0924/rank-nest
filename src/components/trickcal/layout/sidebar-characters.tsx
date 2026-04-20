@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ELEMENTS, ELEMENT_COLORS, ELEMENT_ICONS } from "@/lib/constants";
-import type { Element } from "@/lib/constants";
+import { ELEMENTS, ELEMENT_COLORS, ELEMENT_ICONS } from "@/lib/trickcal/constants";
+import type { Element } from "@/lib/trickcal/constants";
 
 
 type CharRow = {

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CharacterDetailClient } from "./character-detail-client";
-import type { Element } from "@/lib/constants";
+import type { Element } from "@/lib/trickcal/constants";
 import type { Character, Item } from "@/types/database";
 
 export const revalidate = 60;

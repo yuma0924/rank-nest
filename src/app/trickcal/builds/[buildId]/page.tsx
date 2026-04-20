@@ -17,8 +17,8 @@ type CharacterInfo = {
   is_hidden: boolean;
 };
 
-import { BUILD_MODE_LABEL_MAP } from "@/lib/constants";
-import type { BuildMode } from "@/lib/constants";
+import { BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
+import type { BuildMode } from "@/lib/trickcal/constants";
 
 type BuildData = {
   id: string;

@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { StaticIcon } from "@/components/ui/static-icon";
 import { cn } from "@/lib/utils";
-import { ELEMENT_ICONS, BUILD_MODE_OPTIONS, BUILD_MODE_LABEL_MAP } from "@/lib/constants";
-import type { BuildMode } from "@/lib/constants";
+import { ELEMENT_ICONS, BUILD_MODE_OPTIONS, BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
+import type { BuildMode } from "@/lib/trickcal/constants";
 
 function readBuildFiltersFromURL() {
   if (typeof window === "undefined") return null;

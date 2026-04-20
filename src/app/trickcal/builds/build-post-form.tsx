@@ -6,8 +6,8 @@ import { CharacterIcon } from "@/components/trickcal/character/character-icon";
 import { Button } from "@/components/ui/button";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { cn, matchesName } from "@/lib/utils";
-import { ELEMENTS, ELEMENT_ICONS, BUILD_MODE_OPTIONS, POSITION_ICON_MAP } from "@/lib/constants";
-import type { BuildMode } from "@/lib/constants";
+import { ELEMENTS, ELEMENT_ICONS, BUILD_MODE_OPTIONS, POSITION_ICON_MAP } from "@/lib/trickcal/constants";
+import type { BuildMode } from "@/lib/trickcal/constants";
 
 
 type CharacterInfo = {

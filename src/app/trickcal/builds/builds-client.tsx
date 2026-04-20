@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { CharacterIcon } from "@/components/trickcal/character/character-icon";
 import { ThumbsUpDown } from "@/components/reaction/thumbs-up-down";
 import { cn } from "@/lib/utils";
-import { ELEMENTS, ELEMENT_ICONS, BUILD_MODE_OPTIONS, BUILD_MODE_LABEL_MAP } from "@/lib/constants";
-import type { BuildMode } from "@/lib/constants";
+import { ELEMENTS, ELEMENT_ICONS, BUILD_MODE_OPTIONS, BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
+import type { BuildMode } from "@/lib/trickcal/constants";
 import { useToast, Toast } from "@/components/ui/toast";
 import { BuildPostForm } from "./build-post-form";
 

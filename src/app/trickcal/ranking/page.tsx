@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { RankingClient } from "./ranking-client";
-import type { Element } from "@/lib/constants";
+import type { Element } from "@/lib/trickcal/constants";
 
 export const revalidate = 60;
 

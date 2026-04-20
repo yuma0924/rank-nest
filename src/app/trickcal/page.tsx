@@ -4,8 +4,8 @@ import { StaticIcon } from "@/components/ui/static-icon";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StarRatingDisplay } from "@/components/ui/star-rating";
 import { CharacterCard } from "@/components/trickcal/character/character-card";
-import type { Element } from "@/lib/constants";
-import { ROLE_ICON_MAP, POSITION_ICON_MAP, ATTACK_TYPE_ICON_MAP } from "@/lib/constants";
+import type { Element } from "@/lib/trickcal/constants";
+import { ROLE_ICON_MAP, POSITION_ICON_MAP, ATTACK_TYPE_ICON_MAP } from "@/lib/trickcal/constants";
 import { HomeSearchSection } from "./home-search-section";
 import { HomeBuildsSection } from "./home-builds-section";
 

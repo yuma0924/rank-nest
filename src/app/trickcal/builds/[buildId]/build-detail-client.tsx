@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { CharacterIcon } from "@/components/trickcal/character/character-icon";
 import { ThumbsUpDown } from "@/components/reaction/thumbs-up-down";
 import { cn } from "@/lib/utils";
-import { ELEMENT_ICONS, BUILD_MODE_LABEL_MAP } from "@/lib/constants";
-import type { BuildMode } from "@/lib/constants";
+import { ELEMENT_ICONS, BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
+import type { BuildMode } from "@/lib/trickcal/constants";
 import { useToast, Toast } from "@/components/ui/toast";
 
 type CharacterInfo = {

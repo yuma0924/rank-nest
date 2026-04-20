@@ -9,7 +9,7 @@ import { StarRatingDisplay } from "@/components/ui/star-rating";
 import { CommentForm } from "@/components/comment/comment-form";
 import { CommentList } from "@/components/comment/comment-list";
 import { cn } from "@/lib/utils";
-import { ROLE_ICON_MAP, POSITION_ICON_MAP, ATTACK_TYPE_ICON_MAP } from "@/lib/constants";
+import { ROLE_ICON_MAP, POSITION_ICON_MAP, ATTACK_TYPE_ICON_MAP } from "@/lib/trickcal/constants";
 import { useToast, Toast } from "@/components/ui/toast";
 import type { CharacterDetail, RelatedCharacter } from "./page";
 

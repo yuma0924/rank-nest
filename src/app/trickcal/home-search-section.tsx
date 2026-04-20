@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { StaticIcon } from "@/components/ui/static-icon";
 import { cn, matchesName } from "@/lib/utils";
-import { ELEMENTS, ELEMENT_ICONS } from "@/lib/constants";
+import { ELEMENTS, ELEMENT_ICONS } from "@/lib/trickcal/constants";
 import { CharacterCard } from "@/components/trickcal/character/character-card";
 
 /** URLクエリパラメータからフィルター状態を復元 */

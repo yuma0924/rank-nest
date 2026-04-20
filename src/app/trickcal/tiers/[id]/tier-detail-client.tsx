@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import Link from "next/link";
-import { TIER_LABELS } from "@/lib/constants";
-import type { TierLabel } from "@/lib/constants";
+import { TIER_LABELS } from "@/lib/trickcal/constants";
+import type { TierLabel } from "@/lib/trickcal/constants";
 import { TierRow } from "@/components/trickcal/tier/tier-row";
 import { TierLikeButton } from "@/components/trickcal/tier/tier-like-button";
 import { ThumbsUpDown } from "@/components/reaction/thumbs-up-down";

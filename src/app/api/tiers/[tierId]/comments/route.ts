@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_DISPLAY_NAME } from "@/lib/constants";
+import { DEFAULT_DISPLAY_NAME } from "@/lib/trickcal/constants";
 import type { TierComment } from "@/types/database";
 import {
   getUserHash,

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_NAME, SITE_DOMAIN } from "@/lib/constants";
+import { SITE_DOMAIN } from "@/lib/constants";
+import { SITE_NAME } from "@/lib/trickcal/constants";
 
 export const metadata: Metadata = {
   title: `ガイドライン・利用規約 | ${SITE_NAME}`,
