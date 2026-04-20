@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getUserHashFromCookies } from "@/app/api/_helpers";
 import {
   getCharacterBySlugCached,
   getItemsByIdsCached,
@@ -11,7 +10,7 @@ import { CharacterDetailClient } from "./character-detail-client";
 import type { Element } from "@/lib/trickcal/constants";
 import type { Item } from "@/types/trickcal";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -88,17 +87,13 @@ export default async function CharacterPage({ params }: Props) {
   const { slug } = await params;
   const supabase = createAdminClient();
 
-  // Wave 1: character + userHash を並列開始（userHash は cookies 読みなので即時）
-  const [character, userHash] = await Promise.all([
-    getCharacter(slug),
-    getUserHashFromCookies(),
-  ]);
+  const character = await getCharacter(slug);
 
   if (!character) {
     notFound();
   }
 
-  // Wave 2: character に依存する全クエリを一気に並列
+  // character に依存する全クエリを並列
   const [rankingResult, rewardsResult, commentsResult, relatedCharsWithRanking] =
     await Promise.all([
       supabase
@@ -125,28 +120,13 @@ export default async function CharacterPage({ params }: Props) {
   const commentsData = (commentsResult.data ?? []).slice(0, 20);
   const hasMoreComments = (commentsResult.data ?? []).length > 20;
 
-  // Wave 3: items と user_comment_reactions を並列
+  // items のみキャッシュから取得
   const rewardItemIds = (rewardsResult.data ?? []).map((r) => r.item_id);
   const itemIdsToFetch: string[] = [];
   if (character.favorite_item_id) itemIdsToFetch.push(character.favorite_item_id);
   for (const id of rewardItemIds) if (!itemIdsToFetch.includes(id)) itemIdsToFetch.push(id);
 
-  const [fetchedItems, userCommentReactionsArr] = await Promise.all([
-    getItemsByIdsCached(itemIdsToFetch),
-    userHash && commentsData.length > 0
-      ? supabase
-          .from("comment_reactions")
-          .select("comment_id, reaction_type")
-          .eq("user_hash", userHash)
-          .in(
-            "comment_id",
-            commentsData.map((c) => c.id)
-          )
-          .then((r) =>
-            (r.data ?? []) as { comment_id: string; reaction_type: "up" | "down" }[]
-          )
-      : Promise.resolve([] as { comment_id: string; reaction_type: "up" | "down" }[]),
-  ]);
+  const fetchedItems = await getItemsByIdsCached(itemIdsToFetch);
 
   const itemMap = new Map(fetchedItems.map((i) => [i.id, i]));
   const favItem = character.favorite_item_id
@@ -155,10 +135,6 @@ export default async function CharacterPage({ params }: Props) {
   const rewardItems: Item[] = rewardItemIds
     .map((id) => itemMap.get(id))
     .filter(Boolean) as Item[];
-
-  const userCommentReactions = new Map(
-    userCommentReactionsArr.map((r) => [r.comment_id, r.reaction_type])
-  );
 
   const relatedCharacters: RelatedCharacter[] = relatedCharsWithRanking.map((c) => ({
     id: c.id,
@@ -213,7 +189,7 @@ export default async function CharacterPage({ params }: Props) {
         initialComments={{
           comments: commentsData.map((c) => ({
             ...c,
-            user_reaction: userCommentReactions.get(c.id) ?? null,
+            user_reaction: null,
           })),
           hasMore: hasMoreComments,
           nextCursor: hasMoreComments ? commentsData[commentsData.length - 1]?.id ?? null : null,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getUserHash,
@@ -18,7 +19,7 @@ export async function POST(
   { params }: { params: Promise<{ tierId: string; commentId: string }> }
 ) {
   try {
-    const { commentId } = await params;
+    const { tierId, commentId } = await params;
     const { userHash, cookieUuid, isNewCookie } = getUserHash(request);
     const supabase = createAdminClient();
 
@@ -130,6 +131,8 @@ export async function POST(
         thumbs_down_count: newThumbsDown,
       })
       .eq("id", commentId);
+
+    revalidatePath(`/trickcal/tiers/${tierId}`);
 
     const headers = setCookieHeaders(cookieUuid, isNewCookie);
     return NextResponse.json(

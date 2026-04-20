@@ -117,6 +117,28 @@ export function BuildDetailClient({
   const isSecondRank = rankParam === "2";
   const [userReaction, setUserReaction] = useState<"up" | "down" | null>(initialUserReaction);
 
+  // ISR で配信される静的ページにはユーザー状態が含まれないので、
+  // マウント時に1回だけ軽量エンドポイントから取得して同期する。
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/builds/${initialBuild.id}/my-state`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        setUserReaction(data.user_reaction ?? null);
+        const reactions: Record<string, "up" | "down"> = data.comment_reactions ?? {};
+        setComments((prev) =>
+          prev.map((c) =>
+            reactions[c.id] ? { ...c, user_reaction: reactions[c.id] } : c
+          )
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [initialBuild.id]);
+
   // コメントフォーム開閉
   const [commentFormOpen, setCommentFormOpen] = useState(false);
 

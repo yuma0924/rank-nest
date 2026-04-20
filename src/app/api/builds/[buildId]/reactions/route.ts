@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getUserHash,
@@ -117,6 +118,10 @@ export async function POST(
       .select("likes_count, dislikes_count")
       .eq("id", buildId)
       .single();
+
+    // ISR キャッシュを無効化
+    revalidatePath(`/trickcal/builds/${buildId}`);
+    revalidatePath("/trickcal/builds");
 
     const headers = setCookieHeaders(cookieUuid, isNewCookie);
     return NextResponse.json(

@@ -186,13 +186,30 @@ export function CharacterDetailClient({
   const [itemsOpen, setItemsOpen] = useState(false);
   const { toast, showToast } = useToast();
 
-  // user_hash 取得
+  // user_hash 取得 + 初期コメントに対する自分のリアクションを取得
   useEffect(() => {
+    let cancelled = false;
     fetch("/api/user-hash")
       .then((r) => r.json())
-      .then((data) => setUserHash(data.user_hash))
+      .then((data) => {
+        if (!cancelled) setUserHash(data.user_hash);
+      })
       .catch(() => {});
-  }, []);
+
+    const ids = (initialComments?.comments ?? []).map((c) => c.id);
+    if (ids.length > 0) {
+      fetch(`/api/reactions?comment_ids=${ids.join(",")}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (cancelled || !data?.reactions) return;
+          setUserReactions((prev) => ({ ...prev, ...data.reactions }));
+        })
+        .catch(() => {});
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [initialComments]);
 
   // コメント取得
   const fetchComments = useCallback(

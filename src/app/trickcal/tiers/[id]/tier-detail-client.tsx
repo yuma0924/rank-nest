@@ -78,8 +78,31 @@ export function TierDetailClient({
 }: TierDetailClientProps) {
   const [tier, setTier] = useState(initialTier);
   const [userLiked, setUserLiked] = useState(initialUserLiked);
-  const [isOwner] = useState(initialIsOwner);
+  const [isOwner, setIsOwner] = useState(initialIsOwner);
   const [deleted, setDeleted] = useState(false);
+
+  // ISR で配信される静的ページにはユーザー状態が含まれないので、
+  // マウント時に1回だけ軽量エンドポイントから取得して同期する。
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/tiers/${initialTier.id}/my-state`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        setUserLiked(!!data.user_liked);
+        setIsOwner(!!data.is_owner);
+        const reactions: Record<string, "up" | "down"> = data.comment_reactions ?? {};
+        setComments((prev) =>
+          prev.map((c) =>
+            reactions[c.id] ? { ...c, user_reaction: reactions[c.id] } : c
+          )
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [initialTier.id]);
 
   // コメントフォーム開閉
   const [commentFormOpen, setCommentFormOpen] = useState(false);
