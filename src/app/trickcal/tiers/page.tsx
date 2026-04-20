@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAllVisibleCharacters } from "@/lib/trickcal/cached-queries";
 import { TiersClient } from "./tiers-client";
 
 type CharacterInfo = {
@@ -21,25 +22,22 @@ export const metadata: Metadata = {
 export default async function TiersPage() {
   const supabase = createAdminClient();
 
-  // キャラクター情報を全件取得（ティアカードのプレビュー用）
-  const { data: rawChars } = await supabase
-    .from("characters")
-    .select("id, name, image_url")
-    .eq("is_hidden", false);
+  // キャラクター（キャッシュ）+ 全ティアデータを並列取得
+  const [allChars, tiersResult] = await Promise.all([
+    getAllVisibleCharacters(),
+    supabase
+      .from("tiers")
+      .select("id, title, display_name, data, likes_count, created_at, tier_comments(count)")
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: false }),
+  ]);
 
   const characters: Record<string, CharacterInfo> = {};
-  if (rawChars) {
-    for (const c of rawChars as CharacterInfo[]) {
-      characters[c.id] = c;
-    }
+  for (const c of allChars) {
+    characters[c.id] = { id: c.id, name: c.name, image_url: c.image_url };
   }
 
-  // 全ティアデータを取得
-  const { data: allTiers } = await supabase
-    .from("tiers")
-    .select("id, title, display_name, data, likes_count, created_at, tier_comments(count)")
-    .eq("is_deleted", false)
-    .order("created_at", { ascending: false });
+  const allTiers = tiersResult.data;
 
   const tiersData = (allTiers ?? []).map((t) => {
     const commentCount = Array.isArray(t.tier_comments) && t.tier_comments.length > 0

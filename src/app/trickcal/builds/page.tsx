@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { StaticIcon } from "@/components/ui/static-icon";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAllVisibleCharacters } from "@/lib/trickcal/cached-queries";
 import { BuildsClient } from "./builds-client";
 
 const ELEMENT_ICON_MAP: Record<string, string> = {
@@ -64,15 +65,12 @@ export default async function BuildsPage() {
     }
   }
 
-  // ランキング + キャラ情報 + 初期編成データを並列取得
-  const [{ data: rankings }, { data: characters }, { data: initialBuilds }] = await Promise.all([
+  // ランキング + 全キャラ（キャッシュ）+ 初期編成を並列取得
+  const [{ data: rankings }, allCharsCached, { data: initialBuilds }] = await Promise.all([
     supabase
       .from("character_rankings")
       .select("character_id, avg_rating, valid_votes_count"),
-    supabase
-      .from("characters")
-      .select("id, slug, name, element, image_url")
-      .eq("is_hidden", false),
+    getAllVisibleCharacters(),
     supabase
       .from("builds")
       .select("id, mode, members, element_label, title, display_name, comment, likes_count, dislikes_count, updated_at, user_hash, build_comments(count)")
@@ -83,17 +81,14 @@ export default async function BuildsPage() {
       .limit(21),
   ]);
 
-  const buildCharIds = [...new Set((initialBuilds ?? []).flatMap((b) => b.members).filter(Boolean))] as string[];
-  const buildCharMap = new Map<string, { id: string; name: string; slug: string; element: string | null; position: string | null; image_url: string | null; is_hidden: boolean }>();
-  if (buildCharIds.length > 0) {
-    const { data: bChars } = await supabase
-      .from("characters")
-      .select("id, name, slug, element, position, image_url, is_hidden")
-      .in("id", buildCharIds);
-    for (const c of bChars ?? []) {
-      buildCharMap.set(c.id, c as typeof buildCharMap extends Map<string, infer V> ? V : never);
-    }
-  }
+  const characters = allCharsCached.map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    name: c.name,
+    element: c.element,
+    image_url: c.image_url,
+  }));
+  const buildCharMap = new Map(allCharsCached.map((c) => [c.id, c]));
 
   const initialBuildsData = {
     builds: (initialBuilds ?? []).slice(0, 20).map((b) => ({
