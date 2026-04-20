@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { TIER_LABELS } from "@/lib/trickcal/constants";
 import type { TierLabel } from "@/lib/trickcal/constants";
 import { TierRow } from "@/components/trickcal/tier/tier-row";
@@ -76,6 +77,7 @@ export function TierDetailClient({
   initialIsOwner,
   initialComments,
 }: TierDetailClientProps) {
+  const router = useRouter();
   const [tier, setTier] = useState(initialTier);
   const [userLiked, setUserLiked] = useState(initialUserLiked);
   const [isOwner, setIsOwner] = useState(initialIsOwner);
@@ -152,6 +154,8 @@ export function TierDetailClient({
         const data = await res.json();
         setUserLiked(data.user_liked);
         setTier((prev) => ({ ...prev, likes_count: data.likes_count }));
+        // Client Router Cache を更新（他ページに移動して戻っても最新が見えるように）
+        router.refresh();
       } else {
         setUserLiked(prevLiked);
         setTier((prev) => ({ ...prev, likes_count: prevCount }));

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { StaticIcon } from "@/components/ui/static-icon";
 import { Button } from "@/components/ui/button";
 
@@ -110,6 +110,7 @@ export function BuildDetailClient({
   initialUserReaction,
   initialComments,
 }: BuildDetailClientProps) {
+  const router = useRouter();
   const [build, setBuild] = useState(initialBuild);
   const searchParams = useSearchParams();
   const rankParam = searchParams.get("rank");
@@ -233,6 +234,8 @@ export function BuildDetailClient({
           dislikes_count: data.dislikes_count,
         }));
         setUserReaction(data.user_reaction);
+        // Client Router Cache を更新（他ページに移動して戻っても最新が見えるように）
+        router.refresh();
       } else {
         setBuild((prev) => ({ ...prev, ...prevBuild }));
         setUserReaction(prevReaction);
