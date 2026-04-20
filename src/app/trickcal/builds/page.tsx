@@ -28,18 +28,38 @@ export const metadata: Metadata = {
 export default async function BuildsPage() {
   const supabase = createAdminClient();
 
-  // --- 話題のキャラクター（直近24時間）---
   const twentyFourHoursAgo = new Date(
     Date.now() - 24 * 60 * 60 * 1000
   ).toISOString();
 
-  const { data: recentComments } = await supabase
-    .from("comments")
-    .select("character_id, user_hash, body, display_name, thumbs_up_count")
-    .eq("is_deleted", false)
-    .gte("created_at", twentyFourHoursAgo)
-    .limit(200);
+  // recentComments / rankings / characters / initialBuilds を全て Wave1 で並列
+  const [
+    { data: recentComments },
+    { data: rankings },
+    allCharsCached,
+    { data: initialBuilds },
+  ] = await Promise.all([
+    supabase
+      .from("comments")
+      .select("character_id, user_hash, body, display_name, thumbs_up_count")
+      .eq("is_deleted", false)
+      .gte("created_at", twentyFourHoursAgo)
+      .limit(200),
+    supabase
+      .from("character_rankings")
+      .select("character_id, avg_rating, valid_votes_count"),
+    getAllVisibleCharacters(),
+    supabase
+      .from("builds")
+      .select("id, mode, members, element_label, title, display_name, comment, likes_count, dislikes_count, updated_at, user_hash, build_comments(count)")
+      .eq("is_deleted", false)
+      .eq("mode", "general")
+      .order("likes_count", { ascending: false })
+      .order("updated_at", { ascending: false })
+      .limit(21),
+  ]);
 
+  // --- 話題のキャラクター集計（直近24時間） ---
   const trendingMap = new Map<string, number>();
   const userCharCountMap = new Map<string, number>();
   const trendingCommentMap = new Map<string, { body: string; author: string; thumbsUp: number }>();
@@ -64,22 +84,6 @@ export default async function BuildsPage() {
       }
     }
   }
-
-  // ランキング + 全キャラ（キャッシュ）+ 初期編成を並列取得
-  const [{ data: rankings }, allCharsCached, { data: initialBuilds }] = await Promise.all([
-    supabase
-      .from("character_rankings")
-      .select("character_id, avg_rating, valid_votes_count"),
-    getAllVisibleCharacters(),
-    supabase
-      .from("builds")
-      .select("id, mode, members, element_label, title, display_name, comment, likes_count, dislikes_count, updated_at, user_hash, build_comments(count)")
-      .eq("is_deleted", false)
-      .eq("mode", "general")
-      .order("likes_count", { ascending: false })
-      .order("updated_at", { ascending: false })
-      .limit(21),
-  ]);
 
   const characters = allCharsCached.map((c) => ({
     id: c.id,
