@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_DISPLAY_NAME, TIER_LABELS } from "@/lib/trickcal/constants";
-import type { Tier } from "@/types/database";
+import type { Tier } from "@/types/trickcal";
 import {
   getUserHash,
   isUserBanned,

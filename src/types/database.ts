@@ -675,20 +675,9 @@ export type InsertTables<T extends keyof Database["public"]["Tables"]> =
 export type UpdateTables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Update"];
 
-// よく使うテーブル型のエイリアス
-export type Character = Tables<"characters">;
+// 共通テーブルのエイリアス（ゲーム横断で同じ構造）
 export type Comment = Tables<"comments">;
-export type CharacterRanking = Tables<"character_rankings">;
 export type CommentReaction = Tables<"comment_reactions">;
 export type SiteConfig = Tables<"site_config">;
 export type Blacklist = Tables<"blacklist">;
-export type Build = Tables<"builds">;
-export type BuildReaction = Tables<"build_reactions">;
-export type BuildComment = Tables<"build_comments">;
-export type BuildCommentReaction = Tables<"build_comment_reactions">;
-export type Item = Tables<"items">;
 export type Report = Tables<"reports">;
-export type Tier = Tables<"tiers">;
-export type TierReaction = Tables<"tier_reactions">;
-export type TierComment = Tables<"tier_comments">;
-export type TierCommentReaction = Tables<"tier_comment_reactions">;

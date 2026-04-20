@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, type ChangeEvent } from "react";
-import type { Item } from "@/types/database";
+import type { Item } from "@/types/trickcal";
 
 type ItemDraft = Item & { _isNew?: boolean; _isDirty?: boolean };
 

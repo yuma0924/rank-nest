@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserHash } from "@/app/api/_helpers";
-import type { Build } from "@/types/database";
+import type { Build } from "@/types/trickcal";
 
 type CharacterInfo = {
   id: string;

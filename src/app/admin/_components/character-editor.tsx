@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect, type KeyboardEvent, type ChangeEvent } from "react";
-import type { Character, Item } from "@/types/database";
+import type { Character, Item } from "@/types/trickcal";
 import { matchesName } from "@/lib/utils";
 
 interface RelicData {

@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CharacterEditor } from "../../_components/character-editor";
-import type { Character, Item } from "@/types/database";
+import type { Character, Item } from "@/types/trickcal";
 
 export default async function CharactersManagePage() {
   const supabase = createAdminClient();

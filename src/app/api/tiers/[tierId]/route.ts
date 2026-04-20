@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserHash, setCookieHeaders } from "@/app/api/_helpers";
-import type { Tier } from "@/types/database";
+import type { Tier } from "@/types/trickcal";
 
 /**
  * GET /api/tiers/[tierId]

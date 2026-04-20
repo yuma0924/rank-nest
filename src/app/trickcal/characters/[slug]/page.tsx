@@ -4,7 +4,7 @@ import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CharacterDetailClient } from "./character-detail-client";
 import type { Element } from "@/lib/trickcal/constants";
-import type { Character, Item } from "@/types/database";
+import type { Character, Item } from "@/types/trickcal";
 
 export const revalidate = 60;
 

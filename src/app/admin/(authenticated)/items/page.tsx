@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ItemEditor } from "../../_components/item-editor";
-import type { Item } from "@/types/database";
+import type { Item } from "@/types/trickcal";
 
 export default async function ItemsManagePage() {
   const supabase = createAdminClient();
