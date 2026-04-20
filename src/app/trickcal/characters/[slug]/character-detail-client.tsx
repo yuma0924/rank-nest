@@ -155,7 +155,13 @@ export function CharacterDetailClient({
 
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [userReactions, setUserReactions] = useState<Record<string, ReactionState>>({});
+  const [userReactions, setUserReactions] = useState<Record<string, ReactionState>>(() => {
+    const initial: Record<string, ReactionState> = {};
+    for (const c of initialComments?.comments ?? []) {
+      if (c.user_reaction) initial[c.id] = c.user_reaction;
+    }
+    return initial;
+  });
   const [, setUserHash] = useState<string | null>(null);
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);

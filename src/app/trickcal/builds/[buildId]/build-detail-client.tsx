@@ -97,6 +97,7 @@ function formatDate(dateStr: string): string {
 interface BuildDetailClientProps {
   build: BuildDetail;
   similarBuilds: SimilarBuild[];
+  initialUserReaction: "up" | "down" | null;
   initialComments?: {
     comments: CommentItem[];
     hasMore: boolean;
@@ -106,6 +107,7 @@ interface BuildDetailClientProps {
 export function BuildDetailClient({
   build: initialBuild,
   similarBuilds,
+  initialUserReaction,
   initialComments,
 }: BuildDetailClientProps) {
   const [build, setBuild] = useState(initialBuild);
@@ -113,7 +115,7 @@ export function BuildDetailClient({
   const rankParam = searchParams.get("rank");
   const isTopRank = rankParam === "1";
   const isSecondRank = rankParam === "2";
-  const [userReaction, setUserReaction] = useState<"up" | "down" | null>(null);
+  const [userReaction, setUserReaction] = useState<"up" | "down" | null>(initialUserReaction);
 
   // コメントフォーム開閉
   const [commentFormOpen, setCommentFormOpen] = useState(false);
@@ -182,21 +184,6 @@ export function BuildDetailClient({
   }, [fetchComments]);
 
 
-  // 初期リアクション状態を取得
-  useEffect(() => {
-    async function fetchReaction() {
-      try {
-        const res = await fetch(`/api/builds/${build.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setUserReaction(data.build.user_reaction);
-        }
-      } catch {
-        // ignore
-      }
-    }
-    fetchReaction();
-  }, [build.id]);
 
   const handleBuildReaction = async (reaction: "up" | "down" | null) => {
     // 楽観的更新

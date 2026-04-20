@@ -57,6 +57,8 @@ interface TierDetailClientProps {
     created_at: string;
   };
   characters: Record<string, CharacterData>;
+  initialUserLiked: boolean;
+  initialIsOwner: boolean;
   initialComments?: {
     comments: CommentItem[];
     hasMore: boolean;
@@ -70,11 +72,13 @@ function formatDate(dateStr: string): string {
 export function TierDetailClient({
   tier: initialTier,
   characters,
+  initialUserLiked,
+  initialIsOwner,
   initialComments,
 }: TierDetailClientProps) {
   const [tier, setTier] = useState(initialTier);
-  const [userLiked, setUserLiked] = useState(false);
-  const [isOwner, setIsOwner] = useState(false);
+  const [userLiked, setUserLiked] = useState(initialUserLiked);
+  const [isOwner] = useState(initialIsOwner);
   const [deleted, setDeleted] = useState(false);
 
   // コメントフォーム開閉
@@ -102,23 +106,6 @@ export function TierDetailClient({
   const [reportReason, setReportReason] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
-
-  // 初期状態取得
-  useEffect(() => {
-    async function fetchStatus() {
-      try {
-        const res = await fetch(`/api/tiers/${tier.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setUserLiked(data.tier.user_liked);
-          setIsOwner(data.tier.is_owner);
-        }
-      } catch {
-        // ignore
-      }
-    }
-    fetchStatus();
-  }, [tier.id]);
 
   const handleToggleLike = async () => {
     const prevLiked = userLiked;

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { cache, Suspense } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getUserHashFromCookies } from "@/app/api/_helpers";
 import { notFound } from "next/navigation";
 import { BuildDetailClient } from "./build-detail-client";
 
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 type CharacterInfo = {
   id: string;
@@ -83,15 +84,6 @@ export async function generateMetadata({
       canonical: `/trickcal/builds/${buildId}`,
     },
   };
-}
-
-export async function generateStaticParams() {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("builds")
-    .select("id")
-    .eq("is_deleted", false);
-  return (data ?? []).map((b) => ({ buildId: b.id }));
 }
 
 export default async function BuildDetailPage({
@@ -186,17 +178,50 @@ export default async function BuildDetailPage({
     updated_at: sb.updated_at,
   }));
 
-  // コメントを事前取得
-  const { data: commentsRaw } = await supabase
-    .from("build_comments")
-    .select("id, build_id, display_name, body, thumbs_up_count, thumbs_down_count, created_at, is_deleted")
-    .eq("build_id", buildId)
-    .eq("is_deleted", false)
-    .order("created_at", { ascending: false })
-    .limit(21);
+  // コメント + ユーザー固有状態を並列取得
+  const userHash = await getUserHashFromCookies();
 
+  const [commentsResult, userBuildReactionResult] = await Promise.all([
+    supabase
+      .from("build_comments")
+      .select("id, build_id, display_name, body, thumbs_up_count, thumbs_down_count, created_at, is_deleted")
+      .eq("build_id", buildId)
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: false })
+      .limit(21),
+    userHash
+      ? supabase
+          .from("build_reactions")
+          .select("reaction_type")
+          .eq("build_id", buildId)
+          .eq("user_hash", userHash)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const commentsRaw = commentsResult.data;
   const commentsData = (commentsRaw ?? []).slice(0, 20);
   const hasMoreComments = (commentsRaw ?? []).length > 20;
+
+  // 各コメントに対するユーザーのリアクションを取得
+  let userCommentReactions = new Map<string, "up" | "down">();
+  if (userHash && commentsData.length > 0) {
+    const { data: reactions } = await supabase
+      .from("build_comment_reactions")
+      .select("build_comment_id, reaction_type")
+      .eq("user_hash", userHash)
+      .in("build_comment_id", commentsData.map((c) => c.id));
+    if (reactions) {
+      userCommentReactions = new Map(
+        (reactions as { build_comment_id: string; reaction_type: "up" | "down" }[]).map(
+          (r) => [r.build_comment_id, r.reaction_type]
+        )
+      );
+    }
+  }
+
+  const initialUserReaction =
+    (userBuildReactionResult.data as { reaction_type: "up" | "down" } | null)?.reaction_type ?? null;
 
   return (
     <Suspense>
@@ -217,6 +242,7 @@ export default async function BuildDetailPage({
           members_detail: membersDetail,
         }}
         similarBuilds={similarBuilds}
+        initialUserReaction={initialUserReaction}
         initialComments={{
           comments: commentsData.map((c) => ({
             id: c.id,
@@ -226,7 +252,7 @@ export default async function BuildDetailPage({
             thumbs_up_count: c.thumbs_up_count,
             thumbs_down_count: c.thumbs_down_count,
             created_at: c.created_at,
-            user_reaction: null,
+            user_reaction: userCommentReactions.get(c.id) ?? null,
           })),
           hasMore: hasMoreComments,
         }}

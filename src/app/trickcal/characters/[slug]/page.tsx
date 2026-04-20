@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getUserHashFromCookies } from "@/app/api/_helpers";
 import { CharacterDetailClient } from "./character-detail-client";
 import type { Element } from "@/lib/trickcal/constants";
 import type { Character, Item } from "@/types/trickcal";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -87,15 +88,6 @@ export interface RelatedCharacter {
   imageUrl: string | null;
   avgRating: number | null;
   validVotesCount: number;
-}
-
-export async function generateStaticParams() {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("characters")
-    .select("slug")
-    .eq("is_hidden", false);
-  return (data ?? []).map((c) => ({ slug: c.slug }));
 }
 
 export default async function CharacterPage({ params }: Props) {
@@ -244,6 +236,24 @@ export default async function CharacterPage({ params }: Props) {
   const commentsData = (commentsResult.data ?? []).slice(0, 20);
   const hasMoreComments = (commentsResult.data ?? []).length > 20;
 
+  // 各コメントに対するユーザーのリアクションを取得
+  const userHash = await getUserHashFromCookies();
+  let userCommentReactions = new Map<string, "up" | "down">();
+  if (userHash && commentsData.length > 0) {
+    const { data: reactions } = await supabase
+      .from("comment_reactions")
+      .select("comment_id, reaction_type")
+      .eq("user_hash", userHash)
+      .in("comment_id", commentsData.map((c) => c.id));
+    if (reactions) {
+      userCommentReactions = new Map(
+        (reactions as { comment_id: string; reaction_type: "up" | "down" }[]).map(
+          (r) => [r.comment_id, r.reaction_type]
+        )
+      );
+    }
+  }
+
   return (
     <CharacterDetailClient
         character={characterDetail}
@@ -251,7 +261,7 @@ export default async function CharacterPage({ params }: Props) {
         initialComments={{
           comments: commentsData.map((c) => ({
             ...c,
-            user_reaction: null,
+            user_reaction: userCommentReactions.get(c.id) ?? null,
           })),
           hasMore: hasMoreComments,
           nextCursor: hasMoreComments ? commentsData[commentsData.length - 1]?.id ?? null : null,

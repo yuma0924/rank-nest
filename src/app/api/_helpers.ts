@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { cookies, headers } from "next/headers";
 import { createHash, randomUUID } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
@@ -36,6 +37,31 @@ export function getUserHash(request: NextRequest): {
     .digest("hex");
 
   return { userHash, cookieUuid, isNewCookie };
+}
+
+/**
+ * Server Component 用: next/headers 経由で user_hash を取得
+ * 新規 Cookie が必要なケースでも Set-Cookie は送出しない（Server Component からは
+ * Cookie を書き込めないため）。Cookie 未所持ユーザーは user_liked=false として扱われ、
+ * 実際の書き込みは POST API 側で行われる。
+ */
+export async function getUserHashFromCookies(): Promise<string | null> {
+  const serverSecret = process.env.USER_HASH_SECRET;
+  if (!serverSecret) return null;
+
+  const cookieStore = await cookies();
+  const cookieUuid = cookieStore.get(COOKIE_NAME)?.value;
+  if (!cookieUuid) return null;
+
+  const headerList = await headers();
+  const forwarded = headerList.get("x-forwarded-for");
+  const clientIp = forwarded
+    ? forwarded.split(",")[0].trim()
+    : headerList.get("x-real-ip") ?? "unknown";
+
+  return createHash("sha256")
+    .update(`${cookieUuid}${clientIp}${serverSecret}`)
+    .digest("hex");
 }
 
 /**
