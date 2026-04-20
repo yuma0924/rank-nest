@@ -18,7 +18,7 @@ export function TierLikeButton({
       type="button"
       onClick={onToggle}
       className={cn(
-        "flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors cursor-pointer",
+        "flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium cursor-pointer",
         userLiked
           ? "border-thumbs-up/40 bg-thumbs-up/10 text-thumbs-up"
           : "border-border-primary text-text-muted hover:border-thumbs-up/30 hover:text-thumbs-up"
