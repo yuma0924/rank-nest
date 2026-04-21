@@ -201,8 +201,23 @@ export function CharacterDetailClient({
       fetch(`/api/reactions?comment_ids=${ids.join(",")}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
-          if (cancelled || !data?.reactions) return;
-          setUserReactions((prev) => ({ ...prev, ...data.reactions }));
+          if (cancelled || !data) return;
+          if (data.reactions) {
+            setUserReactions((prev) => ({ ...prev, ...data.reactions }));
+          }
+          // 最新の thumbs counts も同じスナップショットから適用してズレ防止
+          if (data.counts) {
+            const counts: Record<string, { thumbs_up: number; thumbs_down: number }> =
+              data.counts;
+            setComments((prev) =>
+              prev.map((c) => {
+                const cnt = counts[c.id];
+                return cnt
+                  ? { ...c, thumbsUpCount: cnt.thumbs_up, thumbsDownCount: cnt.thumbs_down }
+                  : c;
+              })
+            );
+          }
         })
         .catch(() => {});
     }

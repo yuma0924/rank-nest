@@ -13,8 +13,12 @@ const REACTION_RATE_LIMIT_SECONDS = 1;
 /**
  * リアクション状態取得 API
  * GET /api/reactions?comment_ids=id1,id2,id3
- * ユーザーが対象コメントに付けたリアクションをまとめて返す
- * Response: { reactions: { [comment_id]: "up" | "down" | null } }
+ * ユーザーのリアクション + 各コメントの最新 thumbs counts を同じ
+ * スナップショットから返す。reload 時の色とカウントのズレを防ぐ。
+ * Response: {
+ *   reactions: { [comment_id]: "up" | "down" | null },
+ *   counts: { [comment_id]: { thumbs_up: number, thumbs_down: number } }
+ * }
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -48,25 +52,41 @@ export async function GET(request: NextRequest) {
 
   const supabase = createAdminClient();
 
-  const { data } = await supabase
-    .from("comment_reactions")
-    .select("comment_id, reaction_type")
-    .in("comment_id", commentIds)
-    .eq("user_hash", userHash);
+  // 1 クエリで comment + user's reaction を同じスナップショットで取得
+  const { data: rows } = await supabase
+    .from("comments")
+    .select(
+      `id, thumbs_up_count, thumbs_down_count,
+       comment_reactions!left(reaction_type)`
+    )
+    .in("id", commentIds)
+    .eq("comment_reactions.user_hash", userHash);
 
-  // comment_id -> reaction_type のマップを構築
   const reactions: Record<string, "up" | "down" | null> = {};
+  const counts: Record<string, { thumbs_up: number; thumbs_down: number }> = {};
   for (const id of commentIds) {
     reactions[id] = null;
   }
-  if (data) {
-    for (const row of data) {
-      reactions[row.comment_id] = row.reaction_type;
-    }
+  for (const row of (rows ?? []) as {
+    id: string;
+    thumbs_up_count: number;
+    thumbs_down_count: number;
+    comment_reactions:
+      | { reaction_type: "up" | "down" }
+      | { reaction_type: "up" | "down" }[]
+      | null;
+  }[]) {
+    counts[row.id] = {
+      thumbs_up: row.thumbs_up_count,
+      thumbs_down: row.thumbs_down_count,
+    };
+    const r = row.comment_reactions;
+    const reaction = Array.isArray(r) ? r[0]?.reaction_type : r?.reaction_type;
+    if (reaction) reactions[row.id] = reaction;
   }
 
   const headers = setCookieHeaders(cookieUuid, isNewCookie);
-  return NextResponse.json({ reactions }, { headers });
+  return NextResponse.json({ reactions, counts }, { headers });
 }
 
 /**
