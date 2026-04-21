@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getUserHash,
@@ -131,10 +132,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // コメント存在チェック
+  // コメント存在チェック（revalidate 用に character の slug も一緒に取得）
   const { data: comment } = await supabase
     .from("comments")
-    .select("id, thumbs_up_count, thumbs_down_count")
+    .select("id, thumbs_up_count, thumbs_down_count, characters!inner(slug)")
     .eq("id", comment_id)
     .eq("is_deleted", false)
     .single();
@@ -145,6 +146,11 @@ export async function POST(request: NextRequest) {
       { status: 404 }
     );
   }
+
+  const charSlug = (() => {
+    const c = (comment as unknown as { characters: { slug: string } | { slug: string }[] }).characters;
+    return Array.isArray(c) ? c[0]?.slug : c?.slug;
+  })();
 
   // 既存リアクションを取得
   const { data: existingReaction } = await supabase
@@ -213,6 +219,11 @@ export async function POST(request: NextRequest) {
       thumbs_down_count: newThumbsDown,
     })
     .eq("id", comment_id);
+
+  // 親キャラ詳細ページの ISR キャッシュを無効化
+  if (charSlug) {
+    revalidatePath(`/trickcal/characters/${charSlug}`);
+  }
 
   const headers = setCookieHeaders(cookieUuid, isNewCookie);
   return NextResponse.json(
