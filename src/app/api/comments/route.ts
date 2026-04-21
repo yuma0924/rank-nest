@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getUserHash,
@@ -180,7 +181,7 @@ export async function POST(request: NextRequest) {
     ),
     supabase
       .from("characters")
-      .select("id")
+      .select("id, slug")
       .eq("id", character_id)
       .eq("is_hidden", false)
       .maybeSingle(),
@@ -237,6 +238,12 @@ export async function POST(request: NextRequest) {
   if (insertError) {
     console.error("POST /api/comments insert error:", insertError.message);
     return NextResponse.json({ error: "サーバーエラーが発生しました" }, { status: 500 });
+  }
+
+  // ISR キャッシュを無効化（slug は characterCheck 結果から取得済み）
+  const charSlug = (characterCheck.data as { slug: string } | null)?.slug;
+  if (charSlug) {
+    revalidatePath(`/trickcal/characters/${charSlug}`);
   }
 
   const headers = setCookieHeaders(cookieUuid, isNewCookie);

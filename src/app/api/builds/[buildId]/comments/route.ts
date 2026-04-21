@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_DISPLAY_NAME } from "@/lib/trickcal/constants";
 import type { BuildComment } from "@/types/trickcal";
@@ -302,6 +303,8 @@ export async function POST(
         { status: 500 }
       );
     }
+
+    revalidatePath(`/trickcal/builds/${buildId}`);
 
     const headers = setCookieHeaders(cookieUuid, isNewCookie);
     return NextResponse.json(
