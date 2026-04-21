@@ -178,65 +178,36 @@ export async function POST(request: NextRequest) {
 
   const oldType = existingReaction?.reaction_type ?? null;
 
-  // 変更がない場合は DB 現在値を返す（クライアント同期用）
-  if (oldType === reaction_type) {
-    const headers = setCookieHeaders(cookieUuid, isNewCookie);
-    return NextResponse.json(
-      {
-        reaction_type,
-        thumbs_up_count: comment.thumbs_up_count,
-        thumbs_down_count: comment.thumbs_down_count,
-      },
-      { headers }
-    );
-  }
-
-  // カウント差分を計算
-  let thumbsUpDelta = 0;
-  let thumbsDownDelta = 0;
-
-  if (oldType === "up") thumbsUpDelta -= 1;
-  if (oldType === "down") thumbsDownDelta -= 1;
-  if (reaction_type === "up") thumbsUpDelta += 1;
-  if (reaction_type === "down") thumbsDownDelta += 1;
-
-  // リアクションの UPSERT / DELETE
-  if (reaction_type === null) {
-    // 取り消し
-    if (existingReaction) {
+  // reaction 行の操作だけ。count は trigger が atomic に更新する。
+  if (reaction_type !== oldType) {
+    if (reaction_type === null) {
+      if (existingReaction) {
+        await supabase
+          .from("comment_reactions")
+          .delete()
+          .eq("id", existingReaction.id);
+      }
+    } else if (existingReaction) {
       await supabase
         .from("comment_reactions")
-        .delete()
+        .update({ reaction_type, updated_at: new Date().toISOString() })
         .eq("id", existingReaction.id);
+    } else {
+      await supabase.from("comment_reactions").insert({
+        comment_id,
+        user_hash: userHash,
+        reaction_type,
+      });
     }
-  } else if (existingReaction) {
-    // 更新
-    await supabase
-      .from("comment_reactions")
-      .update({ reaction_type, updated_at: new Date().toISOString() })
-      .eq("id", existingReaction.id);
-  } else {
-    // 新規作成
-    await supabase.from("comment_reactions").insert({
-      comment_id,
-      user_hash: userHash,
-      reaction_type,
-    });
   }
 
-  const newThumbsUp = comment.thumbs_up_count + thumbsUpDelta;
-  const newThumbsDown = comment.thumbs_down_count + thumbsDownDelta;
-
-  // 非正規化カウント更新
-  await supabase
+  // trigger 適用後の最新 count を取得
+  const { data: updatedComment } = await supabase
     .from("comments")
-    .update({
-      thumbs_up_count: newThumbsUp,
-      thumbs_down_count: newThumbsDown,
-    })
-    .eq("id", comment_id);
+    .select("thumbs_up_count, thumbs_down_count")
+    .eq("id", comment_id)
+    .maybeSingle();
 
-  // 親キャラ詳細ページの ISR キャッシュを無効化
   if (charSlug) {
     revalidatePath(`/trickcal/characters/${charSlug}`);
   }
@@ -245,8 +216,8 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(
     {
       reaction_type,
-      thumbs_up_count: newThumbsUp,
-      thumbs_down_count: newThumbsDown,
+      thumbs_up_count: updatedComment?.thumbs_up_count ?? 0,
+      thumbs_down_count: updatedComment?.thumbs_down_count ?? 0,
     },
     { headers }
   );

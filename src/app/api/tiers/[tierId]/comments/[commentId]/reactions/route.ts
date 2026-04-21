@@ -10,7 +10,6 @@ import {
 
 const REACTION_RATE_LIMIT_SECONDS = 1;
 
-type CommentRow = { id: string; thumbs_up_count: number; thumbs_down_count: number };
 type ReactionRow = { id: string; reaction_type: "up" | "down" };
 
 /**
@@ -71,17 +70,15 @@ export async function POST(
       );
     }
 
-    // コメントの存在確認
+    // コメントの存在確認（count は trigger が管理するので読み取らない）
     const { data: rawComment } = await supabase
       .from("tier_comments")
-      .select("id, thumbs_up_count, thumbs_down_count")
+      .select("id")
       .eq("id", commentId)
       .eq("is_deleted", false)
-      .single();
+      .maybeSingle();
 
-    const comment = rawComment as CommentRow | null;
-
-    if (!comment) {
+    if (!rawComment) {
       return NextResponse.json(
         { error: "コメントが見つかりません" },
         { status: 404 }
@@ -94,32 +91,20 @@ export async function POST(
       .select("id, reaction_type")
       .eq("tier_comment_id", commentId)
       .eq("user_hash", userHash)
-      .single();
+      .maybeSingle();
 
     const existing = rawExisting as ReactionRow | null;
 
-    let newThumbsUp = comment.thumbs_up_count;
-    let newThumbsDown = comment.thumbs_down_count;
-
+    // reaction 行の操作だけ行う。count は trigger が atomic に更新する。
     if (reaction_type === null) {
-      // 取り消し
       if (existing) {
-        if (existing.reaction_type === "up") newThumbsUp--;
-        if (existing.reaction_type === "down") newThumbsDown--;
-
         await supabase
           .from("tier_comment_reactions")
           .delete()
           .eq("id", existing.id);
       }
     } else if (existing) {
-      // 変更
       if (existing.reaction_type !== reaction_type) {
-        if (existing.reaction_type === "up") newThumbsUp--;
-        if (existing.reaction_type === "down") newThumbsDown--;
-        if (reaction_type === "up") newThumbsUp++;
-        if (reaction_type === "down") newThumbsDown++;
-
         await supabase
           .from("tier_comment_reactions")
           .update({
@@ -129,10 +114,6 @@ export async function POST(
           .eq("id", existing.id);
       }
     } else {
-      // 新規
-      if (reaction_type === "up") newThumbsUp++;
-      if (reaction_type === "down") newThumbsDown++;
-
       await supabase.from("tier_comment_reactions").insert({
         tier_comment_id: commentId,
         user_hash: userHash,
@@ -140,22 +121,20 @@ export async function POST(
       });
     }
 
-    // カウントを更新
-    await supabase
+    // trigger 適用後の最新 count を取得
+    const { data: updatedComment } = await supabase
       .from("tier_comments")
-      .update({
-        thumbs_up_count: newThumbsUp,
-        thumbs_down_count: newThumbsDown,
-      })
-      .eq("id", commentId);
+      .select("thumbs_up_count, thumbs_down_count")
+      .eq("id", commentId)
+      .maybeSingle();
 
     revalidatePath(`/trickcal/tiers/${tierId}`);
 
     const headers = setCookieHeaders(cookieUuid, isNewCookie);
     return NextResponse.json(
       {
-        thumbs_up_count: newThumbsUp,
-        thumbs_down_count: newThumbsDown,
+        thumbs_up_count: updatedComment?.thumbs_up_count ?? 0,
+        thumbs_down_count: updatedComment?.thumbs_down_count ?? 0,
         user_reaction: reaction_type,
       },
       { headers }
