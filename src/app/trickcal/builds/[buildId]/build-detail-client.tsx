@@ -263,6 +263,11 @@ export function BuildDetailClient({
           dislikes_count: data.dislikes_count,
         }));
       }
+      try {
+        localStorage.setItem(reactionStorageKey, data.user_reaction ?? "");
+      } catch {
+        // ignore
+      }
     } catch {
       // ignore
     }
@@ -288,6 +293,12 @@ export function BuildDetailClient({
         dislikes_count: Math.max(0, down),
       };
     });
+    // localStorage も即同期
+    try {
+      localStorage.setItem(reactionStorageKey, reaction ?? "");
+    } catch {
+      // ignore
+    }
 
     try {
       const res = await fetch(`/api/builds/${build.id}/reactions`, {

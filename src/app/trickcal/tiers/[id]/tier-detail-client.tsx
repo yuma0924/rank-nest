@@ -172,6 +172,11 @@ export function TierDetailClient({
       if (typeof data.likes_count === "number") {
         setTier((prev) => ({ ...prev, likes_count: data.likes_count }));
       }
+      try {
+        localStorage.setItem(likeStorageKey, data.user_liked ? "1" : "0");
+      } catch {
+        // ignore
+      }
     } catch {
       // ignore
     }
@@ -191,6 +196,12 @@ export function TierDetailClient({
       ...prev,
       likes_count: Math.max(0, newLiked ? prev.likes_count + 1 : prev.likes_count - 1),
     }));
+    // localStorage も即同期（API 応答を待たずにリロードしても色が復元される）
+    try {
+      localStorage.setItem(likeStorageKey, newLiked ? "1" : "0");
+    } catch {
+      // ignore
+    }
 
     try {
       const res = await fetch(`/api/tiers/${tier.id}/reactions`, {
