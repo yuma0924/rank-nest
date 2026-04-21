@@ -144,8 +144,8 @@ export function TierDetailClient({
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
 
-  // 連打対策: 処理中はブロック
-  const likePendingRef = useRef(false);
+  // 連打対策: 前のリクエストを abort して「最後のクリックだけ」サーバーに反映
+  const likeAbortRef = useRef<AbortController | null>(null);
 
   // エラー時のフォールバック: DB から真実を取り直す
   const resyncFromServer = async () => {
@@ -163,12 +163,14 @@ export function TierDetailClient({
   };
 
   const handleToggleLike = async () => {
-    if (likePendingRef.current) return;
-    likePendingRef.current = true;
+    // 前の in-flight を abort（最後のクリックだけが最終結果に影響する）
+    likeAbortRef.current?.abort();
+    const controller = new AbortController();
+    likeAbortRef.current = controller;
 
     const newLiked = !userLiked;
 
-    // 色 + 数値を即時楽観更新。数値は prev から計算、クランプで負値防止
+    // 色 + 数値を即時楽観更新。prev から計算、クランプで負値防止
     setUserLiked(newLiked);
     setTier((prev) => ({
       ...prev,
@@ -182,20 +184,22 @@ export function TierDetailClient({
         body: JSON.stringify({
           reaction_type: newLiked ? "up" : null,
         }),
+        signal: controller.signal,
       });
+      if (controller.signal.aborted) return;
       if (res.ok) {
         const data = await res.json();
         setUserLiked(data.user_liked);
         setTier((prev) => ({ ...prev, likes_count: data.likes_count }));
         router.refresh();
       } else {
-        // 429 や他のエラー: 楽観更新をキャンセルし DB から再同期
+        // 429 等: 楽観更新をキャンセルし DB から再同期
         await resyncFromServer();
       }
-    } catch {
+    } catch (e) {
+      // abort されたら新しいクリックが処理中なので何もしない
+      if ((e as Error)?.name === "AbortError") return;
       await resyncFromServer();
-    } finally {
-      likePendingRef.current = false;
     }
   };
 
@@ -299,15 +303,16 @@ export function TierDetailClient({
   }, [fetchComments]);
 
 
-  // コメント毎の処理中 flag。連打で in-flight 複数を防ぐ。
-  const commentReactPendingRef = useRef<Set<string>>(new Set());
+  // コメント毎に abort controller を保持（他コメントのクリックには影響させない）
+  const commentReactAbortRef = useRef<Map<string, AbortController>>(new Map());
 
   const handleCommentReaction = async (
     commentId: string,
     reaction: "up" | "down" | null
   ) => {
-    if (commentReactPendingRef.current.has(commentId)) return;
-    commentReactPendingRef.current.add(commentId);
+    commentReactAbortRef.current.get(commentId)?.abort();
+    const controller = new AbortController();
+    commentReactAbortRef.current.set(commentId, controller);
 
     // 色 + 数値を即時楽観更新。prev から計算、Math.max でクランプ
     setComments((prev) =>
@@ -335,8 +340,10 @@ export function TierDetailClient({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ reaction_type: reaction }),
+          signal: controller.signal,
         }
       );
+      if (controller.signal.aborted) return;
       if (res.ok) {
         const data = await res.json();
         setComments((prev) =>
@@ -352,13 +359,11 @@ export function TierDetailClient({
           )
         );
       } else {
-        // エラー時は my-state で DB から再同期
         await resyncFromServer();
       }
-    } catch {
+    } catch (e) {
+      if ((e as Error)?.name === "AbortError") return;
       await resyncFromServer();
-    } finally {
-      commentReactPendingRef.current.delete(commentId);
     }
   };
 

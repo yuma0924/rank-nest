@@ -226,10 +226,10 @@ export function BuildDetailClient({
 
 
 
-  // 連打対策: 処理中はブロック
-  const reactionPendingRef = useRef(false);
+  // 連打対策: 前のリクエストを abort
+  const reactionAbortRef = useRef<AbortController | null>(null);
 
-  // エラー時のフォールバック: DB から真実を取り直す
+  // エラー時のフォールバック
   const resyncFromServer = async () => {
     try {
       const r = await fetch(`/api/builds/${initialBuild.id}/my-state`);
@@ -252,10 +252,10 @@ export function BuildDetailClient({
   };
 
   const handleBuildReaction = async (reaction: "up" | "down" | null) => {
-    if (reactionPendingRef.current) return;
-    reactionPendingRef.current = true;
+    reactionAbortRef.current?.abort();
+    const controller = new AbortController();
+    reactionAbortRef.current = controller;
 
-    // 色 + 数値を即時楽観更新。prev から計算、Math.max でクランプ
     const prevUserReaction = userReaction;
     setUserReaction(reaction);
     setBuild((prev) => {
@@ -277,7 +277,9 @@ export function BuildDetailClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reaction_type: reaction }),
+        signal: controller.signal,
       });
+      if (controller.signal.aborted) return;
       if (res.ok) {
         const data = await res.json();
         setBuild((prev) => ({
@@ -290,23 +292,24 @@ export function BuildDetailClient({
       } else {
         await resyncFromServer();
       }
-    } catch {
+    } catch (e) {
+      if ((e as Error)?.name === "AbortError") return;
       await resyncFromServer();
-    } finally {
-      reactionPendingRef.current = false;
     }
   };
 
-  const commentReactPendingRef = useRef<Set<string>>(new Set());
+  // コメント毎に abort controller
+  const commentReactAbortRef = useRef<Map<string, AbortController>>(new Map());
 
   const handleCommentReaction = async (
     commentId: string,
     reaction: "up" | "down" | null
   ) => {
-    if (commentReactPendingRef.current.has(commentId)) return;
-    commentReactPendingRef.current.add(commentId);
+    commentReactAbortRef.current.get(commentId)?.abort();
+    const controller = new AbortController();
+    commentReactAbortRef.current.set(commentId, controller);
 
-    // 色 + 数値を即時楽観更新。prev から計算、Math.max でクランプ
+    // 色 + 数値を即時楽観更新
     setComments((prev) =>
       prev.map((c) => {
         if (c.id !== commentId) return c;
@@ -332,8 +335,10 @@ export function BuildDetailClient({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ reaction_type: reaction }),
+          signal: controller.signal,
         }
       );
+      if (controller.signal.aborted) return;
       if (res.ok) {
         const data = await res.json();
         setComments((prev) =>
@@ -351,10 +356,9 @@ export function BuildDetailClient({
       } else {
         await resyncFromServer();
       }
-    } catch {
+    } catch (e) {
+      if ((e as Error)?.name === "AbortError") return;
       await resyncFromServer();
-    } finally {
-      commentReactPendingRef.current.delete(commentId);
     }
   };
 

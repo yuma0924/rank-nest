@@ -321,8 +321,8 @@ export function CharacterDetailClient({
     }
   };
 
-  // リアクション操作
-  const reactPendingRef = useRef<Set<string>>(new Set());
+  // コメント毎に abort controller を保持
+  const reactAbortRef = useRef<Map<string, AbortController>>(new Map());
 
   const resyncReactionsFromServer = async (commentIds: string[]) => {
     if (commentIds.length === 0) return;
@@ -339,10 +339,10 @@ export function CharacterDetailClient({
   };
 
   const handleReact = async (commentId: string, reaction: ReactionState) => {
-    if (reactPendingRef.current.has(commentId)) return;
-    reactPendingRef.current.add(commentId);
+    reactAbortRef.current.get(commentId)?.abort();
+    const controller = new AbortController();
+    reactAbortRef.current.set(commentId, controller);
 
-    // 色 + 数値を即時楽観更新。prev から計算、Math.max でクランプ
     const prevReaction = userReactions[commentId] ?? null;
     setUserReactions((prev) => ({ ...prev, [commentId]: reaction }));
     setComments((prev) =>
@@ -367,7 +367,9 @@ export function CharacterDetailClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comment_id: commentId, reaction_type: reaction }),
+        signal: controller.signal,
       });
+      if (controller.signal.aborted) return;
       if (res.ok) {
         const data = await res.json();
         setUserReactions((prev) => ({ ...prev, [commentId]: data.reaction_type }));
@@ -385,10 +387,9 @@ export function CharacterDetailClient({
       } else {
         await resyncReactionsFromServer([commentId]);
       }
-    } catch {
+    } catch (e) {
+      if ((e as Error)?.name === "AbortError") return;
       await resyncReactionsFromServer([commentId]);
-    } finally {
-      reactPendingRef.current.delete(commentId);
     }
   };
 
