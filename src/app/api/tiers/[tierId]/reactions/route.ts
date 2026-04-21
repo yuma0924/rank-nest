@@ -101,8 +101,10 @@ export async function POST(
       .single();
 
     // ルート ISR と unstable_cache データキャッシュ両方を無効化
+    // ホームのプレビュー、一覧、詳細 すべてに likes_count を表示しているので一括
     revalidatePath(`/trickcal/tiers/${tierId}`);
     revalidatePath("/trickcal/tiers");
+    revalidatePath("/trickcal");
     revalidateTag("tiers");
 
     const headers = setCookieHeaders(cookieUuid, isNewCookie);
