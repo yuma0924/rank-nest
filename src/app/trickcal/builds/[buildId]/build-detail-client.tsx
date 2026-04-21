@@ -226,10 +226,13 @@ export function BuildDetailClient({
 
 
 
-  // 連打競合対策: 最新クリック以外のレスポンスは破棄
-  const reactionReqIdRef = useRef(0);
+  // 連打対策: 処理中はブロック
+  const reactionPendingRef = useRef(false);
 
   const handleBuildReaction = async (reaction: "up" | "down" | null) => {
+    if (reactionPendingRef.current) return;
+    reactionPendingRef.current = true;
+
     // 楽観的更新
     const prevReaction = userReaction;
     const prevBuild = { likes_count: build.likes_count, dislikes_count: build.dislikes_count };
@@ -240,7 +243,6 @@ export function BuildDetailClient({
     if (reaction === "down") dislikes_count++;
     setBuild((prev) => ({ ...prev, likes_count, dislikes_count }));
     setUserReaction(reaction);
-    const myReqId = ++reactionReqIdRef.current;
 
     try {
       const res = await fetch(`/api/builds/${build.id}/reactions`, {
@@ -248,7 +250,6 @@ export function BuildDetailClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reaction_type: reaction }),
       });
-      if (myReqId !== reactionReqIdRef.current) return;
       if (res.ok) {
         const data = await res.json();
         setBuild((prev) => ({
@@ -263,9 +264,10 @@ export function BuildDetailClient({
         setUserReaction(prevReaction);
       }
     } catch {
-      if (myReqId !== reactionReqIdRef.current) return;
       setBuild((prev) => ({ ...prev, ...prevBuild }));
       setUserReaction(prevReaction);
+    } finally {
+      reactionPendingRef.current = false;
     }
   };
 

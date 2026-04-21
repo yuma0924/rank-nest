@@ -144,15 +144,17 @@ export function TierDetailClient({
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
 
-  // 連打競合対策: 最新クリック以外のレスポンスは破棄して上書き事故を防ぐ
-  const likeReqIdRef = useRef(0);
+  // 連打対策: 処理中は ref でブロックして 2 重発火を防ぐ
+  const likePendingRef = useRef(false);
 
   const handleToggleLike = async () => {
+    if (likePendingRef.current) return;
+    likePendingRef.current = true;
+
     const prevLiked = userLiked;
     const prevCount = tier.likes_count;
     const newLiked = !prevLiked;
     const newCount = newLiked ? prevCount + 1 : prevCount - 1;
-    const myReqId = ++likeReqIdRef.current;
 
     // 楽観的更新
     setUserLiked(newLiked);
@@ -166,8 +168,6 @@ export function TierDetailClient({
           reaction_type: newLiked ? "up" : null,
         }),
       });
-      // 自分より新しいクリックが発生していたら、このレスポンスは破棄
-      if (myReqId !== likeReqIdRef.current) return;
       if (res.ok) {
         const data = await res.json();
         setUserLiked(data.user_liked);
@@ -178,9 +178,10 @@ export function TierDetailClient({
         setTier((prev) => ({ ...prev, likes_count: prevCount }));
       }
     } catch {
-      if (myReqId !== likeReqIdRef.current) return;
       setUserLiked(prevLiked);
       setTier((prev) => ({ ...prev, likes_count: prevCount }));
+    } finally {
+      likePendingRef.current = false;
     }
   };
 
