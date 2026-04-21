@@ -445,12 +445,12 @@ export function CharacterEditor({
           value={filterName}
           onChange={(e) => setFilterName(e.target.value)}
           placeholder="名前で検索..."
-          className="w-36 rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+          className="w-36 rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
         />
         <select
           value={filterElement}
           onChange={(e) => setFilterElement(e.target.value)}
-          className="rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary focus:border-accent focus:outline-none"
+          className="rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary focus:border-accent/50 focus:outline-none"
         >
           <option value="">性格: すべて</option>
           {ELEMENT_OPTIONS.map((e) => (
@@ -460,7 +460,7 @@ export function CharacterEditor({
         <select
           value={filterRarity}
           onChange={(e) => setFilterRarity(e.target.value)}
-          className="rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary focus:border-accent focus:outline-none"
+          className="rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary focus:border-accent/50 focus:outline-none"
         >
           <option value="">レア: すべて</option>
           {RARITY_OPTIONS.map((r) => (
@@ -587,7 +587,7 @@ export function CharacterEditor({
                         ref={(el) => {
                           if (el) cellRefs.current.set(getCellKey(rowIndex, colIndex), el);
                         }}
-                        className={`${field.width} rounded border border-border-secondary bg-bg-input px-1.5 py-1 text-text-primary focus:border-accent focus:outline-none`}
+                        className={`${field.width} rounded border border-border-secondary bg-bg-input px-1.5 py-1 text-text-primary focus:border-accent/50 focus:outline-none`}
                       >
                         <option value="">-</option>
                         {field.options?.map((opt) => (
@@ -609,7 +609,7 @@ export function CharacterEditor({
                         ref={(el) => {
                           if (el) cellRefs.current.set(getCellKey(rowIndex, colIndex), el);
                         }}
-                        className={`${field.width} rounded border border-border-secondary bg-bg-input px-1.5 py-1 text-text-primary focus:border-accent focus:outline-none`}
+                        className={`${field.width} rounded border border-border-secondary bg-bg-input px-1.5 py-1 text-text-primary focus:border-accent/50 focus:outline-none`}
                       />
                     )}
                   </td>
@@ -640,7 +640,7 @@ export function CharacterEditor({
                   <select
                     value={char.favorite_item_id ?? ""}
                     onChange={(e) => updateField(rowIndex, "favorite_item_id", e.target.value || null)}
-                    className="w-24 rounded border border-border-secondary bg-bg-input px-1.5 py-1 text-text-primary focus:border-accent focus:outline-none"
+                    className="w-24 rounded border border-border-secondary bg-bg-input px-1.5 py-1 text-text-primary focus:border-accent/50 focus:outline-none"
                   >
                     <option value="">-</option>
                     {favoriteItems.map((item) => (
@@ -715,7 +715,7 @@ export function CharacterEditor({
                           return arr;
                         });
                       }}
-                      className="w-20 rounded border border-border-secondary bg-bg-input px-1 py-0.5 text-[10px] text-text-primary focus:border-accent focus:outline-none"
+                      className="w-20 rounded border border-border-secondary bg-bg-input px-1 py-0.5 text-[10px] text-text-primary focus:border-accent/50 focus:outline-none"
                     >
                       <option value="">+追加</option>
                       {rewardItems.filter((i) => !(char._rewardItemIds ?? []).includes(i.id)).map((item) => (
@@ -766,7 +766,7 @@ export function CharacterEditor({
                             type="text"
                             value={getSkillField(skills, slot.category, "name")}
                             onChange={(e) => updateSkillField(skillEditIndex, slot.category, "name", e.target.value)}
-                            className="w-full rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary focus:border-accent focus:outline-none"
+                            className="w-full rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary focus:border-accent/50 focus:outline-none"
                             placeholder="スキル名を入力"
                           />
                         </div>
@@ -778,7 +778,7 @@ export function CharacterEditor({
                             type="number"
                             value={getSkillField(skills, slot.category, "cooltime")}
                             onChange={(e) => updateSkillField(skillEditIndex, slot.category, "cooltime", e.target.value)}
-                            className="w-24 rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary focus:border-accent focus:outline-none"
+                            className="w-24 rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary focus:border-accent/50 focus:outline-none"
                             placeholder="秒"
                           />
                         </div>
@@ -788,7 +788,7 @@ export function CharacterEditor({
                         <textarea
                           value={getSkillField(skills, slot.category, "description")}
                           onChange={(e) => updateSkillField(skillEditIndex, slot.category, "description", e.target.value)}
-                          className="w-full rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary focus:border-accent focus:outline-none"
+                          className="w-full rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary focus:border-accent/50 focus:outline-none"
                           rows={2}
                           placeholder="スキルの説明を入力"
                         />
@@ -798,7 +798,7 @@ export function CharacterEditor({
                         <textarea
                           value={getSkillField(skills, slot.category, "params")}
                           onChange={(e) => updateSkillField(skillEditIndex, slot.category, "params", e.target.value)}
-                          className="w-full rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary focus:border-accent focus:outline-none"
+                          className="w-full rounded border border-border-secondary bg-bg-input px-2 py-1 text-xs text-text-primary focus:border-accent/50 focus:outline-none"
                           rows={3}
                           placeholder={"物理ダメージ: 345.6%\n最後の一撃の物理ダメージ: 86.4%\n無敵の持続時間: 3秒"}
                         />
@@ -850,7 +850,7 @@ export function CharacterEditor({
                   type="text"
                   value={getRelic(characters[relicEditIndex])?.name ?? ""}
                   onChange={(e) => updateRelicField(relicEditIndex, "name", e.target.value)}
-                  className="w-full rounded border border-border-secondary bg-bg-input px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
+                  className="w-full rounded border border-border-secondary bg-bg-input px-2 py-1.5 text-xs text-text-primary focus:border-accent/50 focus:outline-none"
                   placeholder="遺物名を入力"
                 />
               </div>
@@ -890,7 +890,7 @@ export function CharacterEditor({
                 <textarea
                   value={getRelic(characters[relicEditIndex])?.params ?? ""}
                   onChange={(e) => updateRelicField(relicEditIndex, "params", e.target.value)}
-                  className="w-full rounded border border-border-secondary bg-bg-input px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
+                  className="w-full rounded border border-border-secondary bg-bg-input px-2 py-1.5 text-xs text-text-primary focus:border-accent/50 focus:outline-none"
                   rows={4}
                   placeholder={"HP増加: +25.7%\n物理攻撃力増加: +12.3%"}
                 />
@@ -902,7 +902,7 @@ export function CharacterEditor({
                 <textarea
                   value={getRelic(characters[relicEditIndex])?.description ?? ""}
                   onChange={(e) => updateRelicField(relicEditIndex, "description", e.target.value)}
-                  className="w-full rounded border border-border-secondary bg-bg-input px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
+                  className="w-full rounded border border-border-secondary bg-bg-input px-2 py-1.5 text-xs text-text-primary focus:border-accent/50 focus:outline-none"
                   rows={3}
                   placeholder="遺物の説明文を入力"
                 />

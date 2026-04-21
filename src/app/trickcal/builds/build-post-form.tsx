@@ -363,7 +363,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
               setBuildMode(newMode);
               onModeChange?.(newMode);
             }}
-            className="w-full appearance-none rounded-[14px] border border-border-primary bg-bg-card-alpha px-4 py-2.5 pr-9 text-sm font-bold text-text-primary cursor-pointer focus:border-accent focus:outline-none"
+            className="w-full appearance-none rounded-[14px] border border-border-primary bg-bg-card-alpha px-4 py-2.5 pr-9 text-sm font-bold text-text-primary cursor-pointer focus:border-accent/50 focus:outline-none"
           >
             {BUILD_MODE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -390,7 +390,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
                   setBuildMode(newMode);
                   onModeChange?.(newMode);
                 }}
-                className="appearance-none rounded-[12px] border border-border-primary bg-bg-card-alpha px-4 py-2 pr-9 text-sm font-bold text-text-primary cursor-pointer focus:border-accent focus:outline-none"
+                className="appearance-none rounded-[12px] border border-border-primary bg-bg-card-alpha px-4 py-2 pr-9 text-sm font-bold text-text-primary cursor-pointer focus:border-accent/50 focus:outline-none"
               >
                 {BUILD_MODE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -480,7 +480,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="検索..."
-                className="w-48 rounded-[12px] border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/50 focus:border-accent focus:outline-none"
+                className="w-48 rounded-[12px] border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/50 focus:border-accent/50 focus:outline-none"
               />
             </div>
           </div>
@@ -490,7 +490,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="キャラ名で検索..."
-            className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-base text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none md:hidden"
+            className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-base text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none md:hidden"
           />
         </div>
 
@@ -729,7 +729,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
               onChange={(e) => setTitle(e.target.value)}
               placeholder={BUILD_MODE_OPTIONS.find((o) => o.value === formMode)?.label ?? ""}
               maxLength={100}
-              className="min-w-0 flex-1 rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted/50 focus:border-accent focus:outline-none"
+              className="min-w-0 flex-1 rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted/50 focus:border-accent/50 focus:outline-none"
             />
           </div>
           <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -742,7 +742,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="名無しの教主"
             maxLength={50}
-            className="min-w-0 flex-1 rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted/50 focus:border-accent focus:outline-none"
+            className="min-w-0 flex-1 rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted/50 focus:border-accent/50 focus:outline-none"
           />
           </div>
         </div>
@@ -761,7 +761,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
             placeholder="この編成について入力"
             maxLength={200}
             rows={3}
-            className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-base text-text-primary placeholder:text-text-muted/50 focus:border-accent focus:outline-none resize-none"
+            className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-base text-text-primary placeholder:text-text-muted/50 focus:border-accent/50 focus:outline-none resize-none"
           />
         </div>
 

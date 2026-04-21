@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
                 placeholder="管理者パスワードを入力"
                 autoComplete="current-password"
                 required
-                className="w-full rounded-lg border border-border-primary bg-bg-input px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full rounded-lg border border-border-primary bg-bg-input px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
 

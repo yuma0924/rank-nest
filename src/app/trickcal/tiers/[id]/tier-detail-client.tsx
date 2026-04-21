@@ -588,7 +588,7 @@ export function TierDetailClient({
                 onChange={(e) => setCommentName(e.target.value)}
                 placeholder="名前（任意）"
                 maxLength={50}
-                className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+                className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
               />
               <div>
                 <textarea
@@ -597,7 +597,7 @@ export function TierDetailClient({
                   placeholder="コメントを入力..."
                   maxLength={300}
                   rows={3}
-                  className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none resize-none"
+                  className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none resize-none"
                 />
                 <div className="mt-1 text-right text-xs text-text-tertiary">
                   {commentBody.length}/300
@@ -710,7 +710,7 @@ export function TierDetailClient({
               placeholder="通報理由（任意）"
               maxLength={300}
               rows={3}
-              className="mb-3 w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none resize-none"
+              className="mb-3 w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none resize-none"
             />
             {reportSuccess ? (
               <p className="text-sm text-thumbs-up">通報しました</p>

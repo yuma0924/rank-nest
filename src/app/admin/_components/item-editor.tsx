@@ -209,14 +209,14 @@ export function ItemEditor({ initialItems }: { initialItems: Item[] }) {
           value={item.name}
           onChange={(e) => updateField(realIndex, "name", e.target.value)}
           placeholder="アイテム名"
-          className="min-w-0 flex-1 rounded border border-border-secondary bg-bg-input px-2 py-1.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+          className="min-w-0 flex-1 rounded border border-border-secondary bg-bg-input px-2 py-1.5 text-sm text-text-primary focus:border-accent/50 focus:outline-none"
         />
 
         {/* 種別 */}
         <select
           value={item.item_type}
           onChange={(e) => updateField(realIndex, "item_type", e.target.value)}
-          className="rounded border border-border-secondary bg-bg-input px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
+          className="rounded border border-border-secondary bg-bg-input px-2 py-1.5 text-xs text-text-primary focus:border-accent/50 focus:outline-none"
         >
           <option value="favorite">大好物</option>
           <option value="reward">報酬</option>

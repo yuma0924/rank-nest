@@ -90,14 +90,14 @@ export function BlacklistManager() {
             placeholder="user_hash"
             value={newUserHash}
             onChange={(e) => setNewUserHash(e.target.value)}
-            className="flex-1 rounded-lg border border-border-primary bg-bg-input px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+            className="flex-1 rounded-lg border border-border-primary bg-bg-input px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
           />
           <input
             type="text"
             placeholder="理由（任意）"
             value={newReason}
             onChange={(e) => setNewReason(e.target.value)}
-            className="w-48 rounded-lg border border-border-primary bg-bg-input px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+            className="w-48 rounded-lg border border-border-primary bg-bg-input px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
           />
           <button
             type="submit"

@@ -93,7 +93,7 @@ export function SettingsEditor() {
               onChange={(e) =>
                 setConfig({ ...config, display_name: e.target.value })
               }
-              className="w-full max-w-md rounded-lg border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
+              className="w-full max-w-md rounded-lg border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary focus:border-accent/50 focus:outline-none"
             />
           </div>
           <div>
@@ -106,7 +106,7 @@ export function SettingsEditor() {
                 setConfig({ ...config, description: e.target.value || null })
               }
               rows={3}
-              className="w-full max-w-md rounded-lg border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
+              className="w-full max-w-md rounded-lg border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary focus:border-accent/50 focus:outline-none"
             />
           </div>
         </div>
@@ -132,7 +132,7 @@ export function SettingsEditor() {
                     labels: { ...config.labels, [key]: e.target.value },
                   })
                 }
-                className="w-full rounded-lg border border-border-primary bg-bg-input px-3 py-1.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+                className="w-full rounded-lg border border-border-primary bg-bg-input px-3 py-1.5 text-sm text-text-primary focus:border-accent/50 focus:outline-none"
               />
             </div>
           ))}

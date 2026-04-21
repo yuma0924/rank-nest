@@ -237,7 +237,7 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="ティアのタイトル"
                 maxLength={100}
-                className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:border-accent focus:outline-none"
+                className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:border-accent/50 focus:outline-none"
               />
             </div>
             <div>
@@ -250,7 +250,7 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="名無しの教主"
                 maxLength={50}
-                className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:border-accent focus:outline-none"
+                className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:border-accent/50 focus:outline-none"
               />
             </div>
           </div>
@@ -264,7 +264,7 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
               placeholder="このティアについてのコメント"
               maxLength={1000}
               rows={2}
-              className="w-full resize-y rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:border-accent focus:outline-none"
+              className="w-full resize-y rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:border-accent/50 focus:outline-none"
             />
           </div>
         </div>
