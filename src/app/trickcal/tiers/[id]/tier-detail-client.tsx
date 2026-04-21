@@ -295,24 +295,21 @@ export function TierDetailClient({
   }, [fetchComments]);
 
 
+  // コメント毎の処理中 flag。連打で in-flight 複数を防ぐ。
+  const commentReactPendingRef = useRef<Set<string>>(new Set());
+
   const handleCommentReaction = async (
     commentId: string,
     reaction: "up" | "down" | null
   ) => {
-    // 楽観的更新
-    const target = comments.find((c) => c.id === commentId);
-    if (!target) return;
-    const prevReaction = target.user_reaction;
+    if (commentReactPendingRef.current.has(commentId)) return;
+    commentReactPendingRef.current.add(commentId);
+
+    // 色だけ楽観更新。数値はサーバー応答で決める（±1 計算しない）
     setComments((prev) =>
-      prev.map((c) => {
-        if (c.id !== commentId) return c;
-        let { thumbs_up_count, thumbs_down_count } = c;
-        if (prevReaction === "up") thumbs_up_count--;
-        if (prevReaction === "down") thumbs_down_count--;
-        if (reaction === "up") thumbs_up_count++;
-        if (reaction === "down") thumbs_down_count++;
-        return { ...c, thumbs_up_count, thumbs_down_count, user_reaction: reaction };
-      })
+      prev.map((c) =>
+        c.id === commentId ? { ...c, user_reaction: reaction } : c
+      )
     );
 
     try {
@@ -339,22 +336,13 @@ export function TierDetailClient({
           )
         );
       } else {
-        setComments((prev) =>
-          prev.map((c) =>
-            c.id === commentId
-              ? { ...c, thumbs_up_count: target.thumbs_up_count, thumbs_down_count: target.thumbs_down_count, user_reaction: prevReaction }
-              : c
-          )
-        );
+        // エラー時は my-state で DB から再同期
+        await resyncFromServer();
       }
     } catch {
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === commentId
-            ? { ...c, thumbs_up_count: target.thumbs_up_count, thumbs_down_count: target.thumbs_down_count, user_reaction: prevReaction }
-            : c
-        )
-      );
+      await resyncFromServer();
+    } finally {
+      commentReactPendingRef.current.delete(commentId);
     }
   };
 

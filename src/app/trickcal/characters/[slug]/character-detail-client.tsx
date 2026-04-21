@@ -322,24 +322,28 @@ export function CharacterDetailClient({
   };
 
   // リアクション操作
-  const handleReact = async (commentId: string, reaction: ReactionState) => {
-    const prevReaction = userReactions[commentId] ?? null;
+  const reactPendingRef = useRef<Set<string>>(new Set());
 
-    // 楽観的更新（リアクション状態 + カウント）
+  const resyncReactionsFromServer = async (commentIds: string[]) => {
+    if (commentIds.length === 0) return;
+    try {
+      const r = await fetch(`/api/reactions?comment_ids=${commentIds.join(",")}`);
+      if (!r.ok) return;
+      const data = await r.json();
+      if (data.reactions) {
+        setUserReactions((prev) => ({ ...prev, ...data.reactions }));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleReact = async (commentId: string, reaction: ReactionState) => {
+    if (reactPendingRef.current.has(commentId)) return;
+    reactPendingRef.current.add(commentId);
+
+    // 色だけ楽観更新。数値はサーバー応答で決める（±1 計算しない）
     setUserReactions((prev) => ({ ...prev, [commentId]: reaction }));
-    setComments((prev) =>
-      prev.map((c) => {
-        if (c.id !== commentId) return c;
-        let { thumbsUpCount, thumbsDownCount } = c;
-        // 旧リアクションを取り消し
-        if (prevReaction === "up") thumbsUpCount--;
-        if (prevReaction === "down") thumbsDownCount--;
-        // 新リアクションを加算
-        if (reaction === "up") thumbsUpCount++;
-        if (reaction === "down") thumbsDownCount++;
-        return { ...c, thumbsUpCount, thumbsDownCount };
-      })
-    );
 
     try {
       const res = await fetch("/api/reactions", {
@@ -362,22 +366,12 @@ export function CharacterDetailClient({
           )
         );
       } else {
-        throw new Error("reaction failed");
+        await resyncReactionsFromServer([commentId]);
       }
     } catch {
-      // ロールバック
-      setUserReactions((prev) => ({ ...prev, [commentId]: prevReaction }));
-      setComments((prev) =>
-        prev.map((c) => {
-          if (c.id !== commentId) return c;
-          let { thumbsUpCount, thumbsDownCount } = c;
-          if (reaction === "up") thumbsUpCount--;
-          if (reaction === "down") thumbsDownCount--;
-          if (prevReaction === "up") thumbsUpCount++;
-          if (prevReaction === "down") thumbsDownCount++;
-          return { ...c, thumbsUpCount, thumbsDownCount };
-        })
-      );
+      await resyncReactionsFromServer([commentId]);
+    } finally {
+      reactPendingRef.current.delete(commentId);
     }
   };
 
