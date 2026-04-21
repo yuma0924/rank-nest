@@ -83,10 +83,20 @@ export function TierDetailClient({
   const [isOwner, setIsOwner] = useState(initialIsOwner);
   const [deleted, setDeleted] = useState(false);
 
+  const likeStorageKey = `rn:tier:${initialTier.id}:liked`;
+
   // ISR で配信される静的ページには likes_count/user_liked/thumbs counts の
   // 最新値が含まれないので、マウント時に1回だけ /my-state で全部同期する。
-  // これで戻り遷移時の古い Router Cache も訂正される。
+  // さらに localStorage からも色状態を即座に復元してリロード時のラグを無くす。
   useEffect(() => {
+    // まず localStorage から即復元（再訪時は一瞬で色が付く）
+    try {
+      const v = localStorage.getItem(likeStorageKey);
+      if (v !== null) setUserLiked(v === "1");
+    } catch {
+      // ignore
+    }
+
     let cancelled = false;
     fetch(`/api/tiers/${initialTier.id}/my-state`)
       .then((r) => (r.ok ? r.json() : null))
@@ -94,6 +104,11 @@ export function TierDetailClient({
         if (cancelled || !data) return;
         setUserLiked(!!data.user_liked);
         setIsOwner(!!data.is_owner);
+        try {
+          localStorage.setItem(likeStorageKey, data.user_liked ? "1" : "0");
+        } catch {
+          // ignore
+        }
         if (typeof data.likes_count === "number") {
           setTier((prev) => ({ ...prev, likes_count: data.likes_count }));
         }
@@ -191,6 +206,11 @@ export function TierDetailClient({
         const data = await res.json();
         setUserLiked(data.user_liked);
         setTier((prev) => ({ ...prev, likes_count: data.likes_count }));
+        try {
+          localStorage.setItem(likeStorageKey, data.user_liked ? "1" : "0");
+        } catch {
+          // ignore
+        }
         router.refresh();
       } else {
         // 429 等: 楽観更新をキャンセルし DB から再同期

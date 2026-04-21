@@ -118,15 +118,32 @@ export function BuildDetailClient({
   const isSecondRank = rankParam === "2";
   const [userReaction, setUserReaction] = useState<"up" | "down" | null>(initialUserReaction);
 
+  const reactionStorageKey = `rn:build:${initialBuild.id}:reaction`;
+
   // ISR で配信される静的ページには likes_count/user_reaction/thumbs counts の
   // 最新値が含まれないので、マウント時に1回だけ /my-state で全部同期する。
+  // さらに localStorage からも色状態を即座に復元してリロード時のラグを無くす。
   useEffect(() => {
+    // まず localStorage から即復元
+    try {
+      const v = localStorage.getItem(reactionStorageKey);
+      if (v === "up" || v === "down") setUserReaction(v);
+      else if (v === "") setUserReaction(null);
+    } catch {
+      // ignore
+    }
+
     let cancelled = false;
     fetch(`/api/builds/${initialBuild.id}/my-state`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (cancelled || !data) return;
         setUserReaction(data.user_reaction ?? null);
+        try {
+          localStorage.setItem(reactionStorageKey, data.user_reaction ?? "");
+        } catch {
+          // ignore
+        }
         if (
           typeof data.likes_count === "number" &&
           typeof data.dislikes_count === "number"
@@ -288,6 +305,11 @@ export function BuildDetailClient({
           dislikes_count: data.dislikes_count,
         }));
         setUserReaction(data.user_reaction);
+        try {
+          localStorage.setItem(reactionStorageKey, data.user_reaction ?? "");
+        } catch {
+          // ignore
+        }
         router.refresh();
       } else {
         await resyncFromServer();
