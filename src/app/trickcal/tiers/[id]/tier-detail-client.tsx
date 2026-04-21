@@ -168,8 +168,12 @@ export function TierDetailClient({
 
     const newLiked = !userLiked;
 
-    // 楽観的更新（±1 計算はせず、ボタン色だけ先に切り替え）
+    // 色 + 数値を即時楽観更新。数値は prev から計算、クランプで負値防止
     setUserLiked(newLiked);
+    setTier((prev) => ({
+      ...prev,
+      likes_count: Math.max(0, newLiked ? prev.likes_count + 1 : prev.likes_count - 1),
+    }));
 
     try {
       const res = await fetch(`/api/tiers/${tier.id}/reactions`, {
@@ -305,11 +309,23 @@ export function TierDetailClient({
     if (commentReactPendingRef.current.has(commentId)) return;
     commentReactPendingRef.current.add(commentId);
 
-    // 色だけ楽観更新。数値はサーバー応答で決める（±1 計算しない）
+    // 色 + 数値を即時楽観更新。prev から計算、Math.max でクランプ
     setComments((prev) =>
-      prev.map((c) =>
-        c.id === commentId ? { ...c, user_reaction: reaction } : c
-      )
+      prev.map((c) => {
+        if (c.id !== commentId) return c;
+        let up = c.thumbs_up_count;
+        let down = c.thumbs_down_count;
+        if (c.user_reaction === "up") up--;
+        if (c.user_reaction === "down") down--;
+        if (reaction === "up") up++;
+        if (reaction === "down") down++;
+        return {
+          ...c,
+          thumbs_up_count: Math.max(0, up),
+          thumbs_down_count: Math.max(0, down),
+          user_reaction: reaction,
+        };
+      })
     );
 
     try {

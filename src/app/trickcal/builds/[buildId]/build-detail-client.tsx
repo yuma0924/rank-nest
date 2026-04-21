@@ -255,8 +255,22 @@ export function BuildDetailClient({
     if (reactionPendingRef.current) return;
     reactionPendingRef.current = true;
 
-    // 色だけ楽観的に切り替え。数値はサーバー応答で決まる（±1 計算しない）
+    // 色 + 数値を即時楽観更新。prev から計算、Math.max でクランプ
+    const prevUserReaction = userReaction;
     setUserReaction(reaction);
+    setBuild((prev) => {
+      let up = prev.likes_count;
+      let down = prev.dislikes_count;
+      if (prevUserReaction === "up") up--;
+      if (prevUserReaction === "down") down--;
+      if (reaction === "up") up++;
+      if (reaction === "down") down++;
+      return {
+        ...prev,
+        likes_count: Math.max(0, up),
+        dislikes_count: Math.max(0, down),
+      };
+    });
 
     try {
       const res = await fetch(`/api/builds/${build.id}/reactions`, {
@@ -292,11 +306,23 @@ export function BuildDetailClient({
     if (commentReactPendingRef.current.has(commentId)) return;
     commentReactPendingRef.current.add(commentId);
 
-    // 色だけ楽観更新。数値はサーバー応答で決める（±1 計算しない）
+    // 色 + 数値を即時楽観更新。prev から計算、Math.max でクランプ
     setComments((prev) =>
-      prev.map((c) =>
-        c.id === commentId ? { ...c, user_reaction: reaction } : c
-      )
+      prev.map((c) => {
+        if (c.id !== commentId) return c;
+        let up = c.thumbs_up_count;
+        let down = c.thumbs_down_count;
+        if (c.user_reaction === "up") up--;
+        if (c.user_reaction === "down") down--;
+        if (reaction === "up") up++;
+        if (reaction === "down") down++;
+        return {
+          ...c,
+          thumbs_up_count: Math.max(0, up),
+          thumbs_down_count: Math.max(0, down),
+          user_reaction: reaction,
+        };
+      })
     );
 
     try {

@@ -342,8 +342,25 @@ export function CharacterDetailClient({
     if (reactPendingRef.current.has(commentId)) return;
     reactPendingRef.current.add(commentId);
 
-    // 色だけ楽観更新。数値はサーバー応答で決める（±1 計算しない）
+    // 色 + 数値を即時楽観更新。prev から計算、Math.max でクランプ
+    const prevReaction = userReactions[commentId] ?? null;
     setUserReactions((prev) => ({ ...prev, [commentId]: reaction }));
+    setComments((prev) =>
+      prev.map((c) => {
+        if (c.id !== commentId) return c;
+        let up = c.thumbsUpCount;
+        let down = c.thumbsDownCount;
+        if (prevReaction === "up") up--;
+        if (prevReaction === "down") down--;
+        if (reaction === "up") up++;
+        if (reaction === "down") down++;
+        return {
+          ...c,
+          thumbsUpCount: Math.max(0, up),
+          thumbsDownCount: Math.max(0, down),
+        };
+      })
+    );
 
     try {
       const res = await fetch("/api/reactions", {
