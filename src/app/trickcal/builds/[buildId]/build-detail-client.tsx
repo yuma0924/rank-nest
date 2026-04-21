@@ -118,8 +118,8 @@ export function BuildDetailClient({
   const isSecondRank = rankParam === "2";
   const [userReaction, setUserReaction] = useState<"up" | "down" | null>(initialUserReaction);
 
-  // ISR で配信される静的ページにはユーザー状態が含まれないので、
-  // マウント時に1回だけ軽量エンドポイントから取得して同期する。
+  // ISR で配信される静的ページには likes_count/user_reaction/thumbs counts の
+  // 最新値が含まれないので、マウント時に1回だけ /my-state で全部同期する。
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/builds/${initialBuild.id}/my-state`)
@@ -127,11 +127,29 @@ export function BuildDetailClient({
       .then((data) => {
         if (cancelled || !data) return;
         setUserReaction(data.user_reaction ?? null);
+        if (
+          typeof data.likes_count === "number" &&
+          typeof data.dislikes_count === "number"
+        ) {
+          setBuild((prev) => ({
+            ...prev,
+            likes_count: data.likes_count,
+            dislikes_count: data.dislikes_count,
+          }));
+        }
         const reactions: Record<string, "up" | "down"> = data.comment_reactions ?? {};
+        const counts: Record<string, { thumbs_up: number; thumbs_down: number }> =
+          data.comment_counts ?? {};
         setComments((prev) =>
-          prev.map((c) =>
-            reactions[c.id] ? { ...c, user_reaction: reactions[c.id] } : c
-          )
+          prev.map((c) => {
+            const cnt = counts[c.id];
+            return {
+              ...c,
+              user_reaction: reactions[c.id] ?? null,
+              thumbs_up_count: cnt?.thumbs_up ?? c.thumbs_up_count,
+              thumbs_down_count: cnt?.thumbs_down ?? c.thumbs_down_count,
+            };
+          })
         );
       })
       .catch(() => {});
@@ -208,6 +226,9 @@ export function BuildDetailClient({
 
 
 
+  // 連打競合対策: 最新クリック以外のレスポンスは破棄
+  const reactionReqIdRef = useRef(0);
+
   const handleBuildReaction = async (reaction: "up" | "down" | null) => {
     // 楽観的更新
     const prevReaction = userReaction;
@@ -219,6 +240,7 @@ export function BuildDetailClient({
     if (reaction === "down") dislikes_count++;
     setBuild((prev) => ({ ...prev, likes_count, dislikes_count }));
     setUserReaction(reaction);
+    const myReqId = ++reactionReqIdRef.current;
 
     try {
       const res = await fetch(`/api/builds/${build.id}/reactions`, {
@@ -226,6 +248,7 @@ export function BuildDetailClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reaction_type: reaction }),
       });
+      if (myReqId !== reactionReqIdRef.current) return;
       if (res.ok) {
         const data = await res.json();
         setBuild((prev) => ({
@@ -234,13 +257,13 @@ export function BuildDetailClient({
           dislikes_count: data.dislikes_count,
         }));
         setUserReaction(data.user_reaction);
-        // Client Router Cache を更新（他ページに移動して戻っても最新が見えるように）
         router.refresh();
       } else {
         setBuild((prev) => ({ ...prev, ...prevBuild }));
         setUserReaction(prevReaction);
       }
     } catch {
+      if (myReqId !== reactionReqIdRef.current) return;
       setBuild((prev) => ({ ...prev, ...prevBuild }));
       setUserReaction(prevReaction);
     }

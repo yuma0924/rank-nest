@@ -83,8 +83,9 @@ export function TierDetailClient({
   const [isOwner, setIsOwner] = useState(initialIsOwner);
   const [deleted, setDeleted] = useState(false);
 
-  // ISR で配信される静的ページにはユーザー状態が含まれないので、
-  // マウント時に1回だけ軽量エンドポイントから取得して同期する。
+  // ISR で配信される静的ページには likes_count/user_liked/thumbs counts の
+  // 最新値が含まれないので、マウント時に1回だけ /my-state で全部同期する。
+  // これで戻り遷移時の古い Router Cache も訂正される。
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/tiers/${initialTier.id}/my-state`)
@@ -93,11 +94,22 @@ export function TierDetailClient({
         if (cancelled || !data) return;
         setUserLiked(!!data.user_liked);
         setIsOwner(!!data.is_owner);
+        if (typeof data.likes_count === "number") {
+          setTier((prev) => ({ ...prev, likes_count: data.likes_count }));
+        }
         const reactions: Record<string, "up" | "down"> = data.comment_reactions ?? {};
+        const counts: Record<string, { thumbs_up: number; thumbs_down: number }> =
+          data.comment_counts ?? {};
         setComments((prev) =>
-          prev.map((c) =>
-            reactions[c.id] ? { ...c, user_reaction: reactions[c.id] } : c
-          )
+          prev.map((c) => {
+            const cnt = counts[c.id];
+            return {
+              ...c,
+              user_reaction: reactions[c.id] ?? null,
+              thumbs_up_count: cnt?.thumbs_up ?? c.thumbs_up_count,
+              thumbs_down_count: cnt?.thumbs_down ?? c.thumbs_down_count,
+            };
+          })
         );
       })
       .catch(() => {});
@@ -132,11 +144,15 @@ export function TierDetailClient({
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
 
+  // 連打競合対策: 最新クリック以外のレスポンスは破棄して上書き事故を防ぐ
+  const likeReqIdRef = useRef(0);
+
   const handleToggleLike = async () => {
     const prevLiked = userLiked;
     const prevCount = tier.likes_count;
     const newLiked = !prevLiked;
     const newCount = newLiked ? prevCount + 1 : prevCount - 1;
+    const myReqId = ++likeReqIdRef.current;
 
     // 楽観的更新
     setUserLiked(newLiked);
@@ -150,17 +166,19 @@ export function TierDetailClient({
           reaction_type: newLiked ? "up" : null,
         }),
       });
+      // 自分より新しいクリックが発生していたら、このレスポンスは破棄
+      if (myReqId !== likeReqIdRef.current) return;
       if (res.ok) {
         const data = await res.json();
         setUserLiked(data.user_liked);
         setTier((prev) => ({ ...prev, likes_count: data.likes_count }));
-        // Client Router Cache を更新（他ページに移動して戻っても最新が見えるように）
         router.refresh();
       } else {
         setUserLiked(prevLiked);
         setTier((prev) => ({ ...prev, likes_count: prevCount }));
       }
     } catch {
+      if (myReqId !== likeReqIdRef.current) return;
       setUserLiked(prevLiked);
       setTier((prev) => ({ ...prev, likes_count: prevCount }));
     }

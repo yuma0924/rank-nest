@@ -16,9 +16,13 @@ export async function GET(
     const { userHash, cookieUuid, isNewCookie } = getUserHash(request);
     const supabase = createAdminClient();
 
-    // tier 所有者判定のため tier の user_hash を取得（軽い）
-    const [tierRow, userLikedRow, commentReactionsRows] = await Promise.all([
-      supabase.from("tiers").select("user_hash").eq("id", tierId).maybeSingle(),
+    // tier 本体（user_hash + likes_count）+ user reaction + comment reactions + comment counts
+    const [tierRow, userLikedRow, commentReactionsRows, commentCountsRows] = await Promise.all([
+      supabase
+        .from("tiers")
+        .select("user_hash, likes_count")
+        .eq("id", tierId)
+        .maybeSingle(),
       supabase
         .from("tier_reactions")
         .select("id")
@@ -30,6 +34,12 @@ export async function GET(
         .select("tier_comment_id, reaction_type, tier_comments!inner(tier_id)")
         .eq("user_hash", userHash)
         .eq("tier_comments.tier_id", tierId),
+      // 各コメントの thumbs_up/down も最新を返して count 表示の同期を取る
+      supabase
+        .from("tier_comments")
+        .select("id, thumbs_up_count, thumbs_down_count")
+        .eq("tier_id", tierId)
+        .eq("is_deleted", false),
     ]);
 
     const commentReactions: Record<string, "up" | "down"> = {};
@@ -40,14 +50,28 @@ export async function GET(
       commentReactions[r.tier_comment_id] = r.reaction_type;
     }
 
+    const commentCounts: Record<string, { thumbs_up: number; thumbs_down: number }> = {};
+    for (const c of (commentCountsRows.data ?? []) as {
+      id: string;
+      thumbs_up_count: number;
+      thumbs_down_count: number;
+    }[]) {
+      commentCounts[c.id] = {
+        thumbs_up: c.thumbs_up_count,
+        thumbs_down: c.thumbs_down_count,
+      };
+    }
+
+    const tierData = tierRow.data as { user_hash: string; likes_count: number } | null;
+
     const headers = setCookieHeaders(cookieUuid, isNewCookie);
     return NextResponse.json(
       {
         user_liked: !!userLikedRow.data,
-        is_owner:
-          !!tierRow.data &&
-          (tierRow.data as { user_hash: string }).user_hash === userHash,
+        is_owner: !!tierData && tierData.user_hash === userHash,
+        likes_count: tierData?.likes_count ?? 0,
         comment_reactions: commentReactions,
+        comment_counts: commentCounts,
       },
       { headers }
     );
