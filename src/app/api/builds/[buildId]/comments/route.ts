@@ -205,32 +205,7 @@ export async function POST(
     const { userHash, cookieUuid, isNewCookie } = getUserHash(request);
     const supabase = createAdminClient();
 
-    // BAN チェック
-    if (await isUserBanned(supabase, userHash)) {
-      return NextResponse.json(
-        { error: "投稿できませんでした。時間をおいて再度お試しください。" },
-        { status: 403 }
-      );
-    }
-
-    // レートリミットチェック（同一編成に対して10秒に1回）
-    const { limited, retryAfter } = await checkRateLimit(
-      supabase,
-      "build_comments",
-      { build_id: buildId, user_hash: userHash },
-      COMMENT_RATE_LIMIT_SECONDS
-    );
-
-    if (limited) {
-      return NextResponse.json(
-        {
-          error: `投稿間隔が短すぎます。${retryAfter}秒後に再度お試しください。`,
-          retry_after: retryAfter,
-        },
-        { status: 429 }
-      );
-    }
-
+    // JSON パース + バリデーションを DB 呼び出し前に
     let parsed: { body?: string; display_name?: string };
     try {
       parsed = await request.json();
@@ -243,7 +218,6 @@ export async function POST(
 
     const { body: commentBody, display_name } = parsed;
 
-    // バリデーション
     if (
       !commentBody ||
       typeof commentBody !== "string" ||
@@ -262,23 +236,46 @@ export async function POST(
       );
     }
 
-    const lines = commentBody.split("\n");
-    if (lines.length > 8) {
+    if (commentBody.split("\n").length > 8) {
       return NextResponse.json(
         { error: "コメントは8行以内で入力してください" },
         { status: 400 }
       );
     }
 
-    // 編成の存在確認
-    const { data: build } = await supabase
-      .from("builds")
-      .select("id")
-      .eq("id", buildId)
-      .eq("is_deleted", false)
-      .single();
+    // 3 つのチェックを並列化
+    const [banned, rateLimit, buildCheck] = await Promise.all([
+      isUserBanned(supabase, userHash),
+      checkRateLimit(
+        supabase,
+        "build_comments",
+        { build_id: buildId, user_hash: userHash },
+        COMMENT_RATE_LIMIT_SECONDS
+      ),
+      supabase
+        .from("builds")
+        .select("id")
+        .eq("id", buildId)
+        .eq("is_deleted", false)
+        .maybeSingle(),
+    ]);
 
-    if (!build) {
+    if (banned) {
+      return NextResponse.json(
+        { error: "投稿できませんでした。時間をおいて再度お試しください。" },
+        { status: 403 }
+      );
+    }
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        {
+          error: `投稿間隔が短すぎます。${rateLimit.retryAfter}秒後に再度お試しください。`,
+          retry_after: rateLimit.retryAfter,
+        },
+        { status: 429 }
+      );
+    }
+    if (!buildCheck.data) {
       return NextResponse.json(
         { error: "編成が見つかりません" },
         { status: 404 }

@@ -196,32 +196,7 @@ export async function POST(
     const { userHash, cookieUuid, isNewCookie } = getUserHash(request);
     const supabase = createAdminClient();
 
-    // BAN チェック
-    if (await isUserBanned(supabase, userHash)) {
-      return NextResponse.json(
-        { error: "投稿できませんでした。時間をおいて再度お試しください。" },
-        { status: 403 }
-      );
-    }
-
-    // レートリミットチェック
-    const { limited, retryAfter } = await checkRateLimit(
-      supabase,
-      "tier_comments",
-      { tier_id: tierId, user_hash: userHash },
-      COMMENT_RATE_LIMIT_SECONDS
-    );
-
-    if (limited) {
-      return NextResponse.json(
-        {
-          error: `投稿間隔が短すぎます。${retryAfter}秒後に再度お試しください。`,
-          retry_after: retryAfter,
-        },
-        { status: 429 }
-      );
-    }
-
+    // JSON パース + バリデーションは DB 呼び出し前に（ネットワーク往復ゼロ）
     let parsed: { body?: string; display_name?: string };
     try {
       parsed = await request.json();
@@ -234,7 +209,6 @@ export async function POST(
 
     const { body: commentBody, display_name } = parsed;
 
-    // バリデーション
     if (
       !commentBody ||
       typeof commentBody !== "string" ||
@@ -253,23 +227,46 @@ export async function POST(
       );
     }
 
-    const lines = commentBody.split("\n");
-    if (lines.length > 8) {
+    if (commentBody.split("\n").length > 8) {
       return NextResponse.json(
         { error: "コメントは8行以内で入力してください" },
         { status: 400 }
       );
     }
 
-    // ティアの存在確認
-    const { data: tier } = await supabase
-      .from("tiers")
-      .select("id")
-      .eq("id", tierId)
-      .eq("is_deleted", false)
-      .single();
+    // 3つのチェックを並列化（BAN / レートリミット / ティア存在）
+    const [banned, rateLimit, tierCheck] = await Promise.all([
+      isUserBanned(supabase, userHash),
+      checkRateLimit(
+        supabase,
+        "tier_comments",
+        { tier_id: tierId, user_hash: userHash },
+        COMMENT_RATE_LIMIT_SECONDS
+      ),
+      supabase
+        .from("tiers")
+        .select("id")
+        .eq("id", tierId)
+        .eq("is_deleted", false)
+        .maybeSingle(),
+    ]);
 
-    if (!tier) {
+    if (banned) {
+      return NextResponse.json(
+        { error: "投稿できませんでした。時間をおいて再度お試しください。" },
+        { status: 403 }
+      );
+    }
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        {
+          error: `投稿間隔が短すぎます。${rateLimit.retryAfter}秒後に再度お試しください。`,
+          retry_after: rateLimit.retryAfter,
+        },
+        { status: 429 }
+      );
+    }
+    if (!tierCheck.data) {
       return NextResponse.json(
         { error: "ティアが見つかりません" },
         { status: 404 }

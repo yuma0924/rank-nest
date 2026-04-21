@@ -166,44 +166,42 @@ export async function POST(request: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // BAN チェック
-  if (await isUserBanned(supabase, userHash)) {
+  // 3 つのチェックを並列化
+  const rateLimitSeconds =
+    comment_type === "vote" ? VOTE_RATE_LIMIT_SECONDS : BOARD_RATE_LIMIT_SECONDS;
+
+  const [banned, rateLimit, characterCheck] = await Promise.all([
+    isUserBanned(supabase, userHash),
+    checkRateLimit(
+      supabase,
+      "comments",
+      { character_id, user_hash: userHash, comment_type },
+      rateLimitSeconds
+    ),
+    supabase
+      .from("characters")
+      .select("id")
+      .eq("id", character_id)
+      .eq("is_hidden", false)
+      .maybeSingle(),
+  ]);
+
+  if (banned) {
     return NextResponse.json(
       { error: "投稿できません" },
       { status: 403 }
     );
   }
-
-  // レートリミットチェック
-  const rateLimitSeconds =
-    comment_type === "vote" ? VOTE_RATE_LIMIT_SECONDS : BOARD_RATE_LIMIT_SECONDS;
-
-  const { limited, retryAfter } = await checkRateLimit(
-    supabase,
-    "comments",
-    { character_id, user_hash: userHash, comment_type },
-    rateLimitSeconds
-  );
-
-  if (limited) {
+  if (rateLimit.limited) {
     return NextResponse.json(
       {
-        error: `投稿間隔が短すぎます。${retryAfter}秒後にお試しください`,
-        retry_after: retryAfter,
+        error: `投稿間隔が短すぎます。${rateLimit.retryAfter}秒後にお試しください`,
+        retry_after: rateLimit.retryAfter,
       },
       { status: 429 }
     );
   }
-
-  // キャラクター存在チェック
-  const { data: character } = await supabase
-    .from("characters")
-    .select("id")
-    .eq("id", character_id)
-    .eq("is_hidden", false)
-    .single();
-
-  if (!character) {
+  if (!characterCheck.data) {
     return NextResponse.json(
       { error: "Character not found" },
       { status: 404 }
