@@ -4,8 +4,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getUserHash,
   isUserBanned,
+  checkRateLimit,
   setCookieHeaders,
 } from "@/app/api/_helpers";
+
+const REACTION_RATE_LIMIT_SECONDS = 1;
 
 /**
  * POST /api/tiers/[tierId]/reactions
@@ -23,11 +26,26 @@ export async function POST(
     const { userHash, cookieUuid, isNewCookie } = getUserHash(request);
     const supabase = createAdminClient();
 
-    // BAN チェック
-    if (await isUserBanned(supabase, userHash)) {
+    // BAN + レートリミット (1秒/同一ユーザー) を並列チェック
+    const [banned, rateLimit] = await Promise.all([
+      isUserBanned(supabase, userHash),
+      checkRateLimit(
+        supabase,
+        "tier_reactions",
+        { user_hash: userHash },
+        REACTION_RATE_LIMIT_SECONDS
+      ),
+    ]);
+    if (banned) {
       return NextResponse.json(
         { error: "操作できませんでした。時間をおいて再度お試しください。" },
         { status: 403 }
+      );
+    }
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { error: "連打しすぎです。少し待ってから再度お試しください。", retry_after: rateLimit.retryAfter },
+        { status: 429 }
       );
     }
 

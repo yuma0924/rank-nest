@@ -4,8 +4,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getUserHash,
   isUserBanned,
+  checkRateLimit,
   setCookieHeaders,
 } from "@/app/api/_helpers";
+
+const REACTION_RATE_LIMIT_SECONDS = 1;
 
 /**
  * リアクション状態取得 API
@@ -124,21 +127,34 @@ export async function POST(request: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // BAN チェック
-  if (await isUserBanned(supabase, userHash)) {
+  // BAN + レートリミット + コメント取得 を並列化
+  const [banned, rateLimit, commentResult] = await Promise.all([
+    isUserBanned(supabase, userHash),
+    checkRateLimit(
+      supabase,
+      "comment_reactions",
+      { user_hash: userHash },
+      REACTION_RATE_LIMIT_SECONDS
+    ),
+    supabase
+      .from("comments")
+      .select("id, thumbs_up_count, thumbs_down_count, characters!inner(slug)")
+      .eq("id", comment_id)
+      .eq("is_deleted", false)
+      .maybeSingle(),
+  ]);
+
+  if (banned) {
+    return NextResponse.json({ error: "操作できません" }, { status: 403 });
+  }
+  if (rateLimit.limited) {
     return NextResponse.json(
-      { error: "操作できません" },
-      { status: 403 }
+      { error: "連打しすぎです。少し待ってから再度お試しください。", retry_after: rateLimit.retryAfter },
+      { status: 429 }
     );
   }
 
-  // コメント存在チェック（revalidate 用に character の slug も一緒に取得）
-  const { data: comment } = await supabase
-    .from("comments")
-    .select("id, thumbs_up_count, thumbs_down_count, characters!inner(slug)")
-    .eq("id", comment_id)
-    .eq("is_deleted", false)
-    .single();
+  const comment = commentResult.data;
 
   if (!comment) {
     return NextResponse.json(
