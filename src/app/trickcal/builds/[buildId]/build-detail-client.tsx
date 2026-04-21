@@ -229,19 +229,33 @@ export function BuildDetailClient({
   // 連打対策: 処理中はブロック
   const reactionPendingRef = useRef(false);
 
+  // エラー時のフォールバック: DB から真実を取り直す
+  const resyncFromServer = async () => {
+    try {
+      const r = await fetch(`/api/builds/${initialBuild.id}/my-state`);
+      if (!r.ok) return;
+      const data = await r.json();
+      setUserReaction(data.user_reaction ?? null);
+      if (
+        typeof data.likes_count === "number" &&
+        typeof data.dislikes_count === "number"
+      ) {
+        setBuild((prev) => ({
+          ...prev,
+          likes_count: data.likes_count,
+          dislikes_count: data.dislikes_count,
+        }));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const handleBuildReaction = async (reaction: "up" | "down" | null) => {
     if (reactionPendingRef.current) return;
     reactionPendingRef.current = true;
 
-    // 楽観的更新
-    const prevReaction = userReaction;
-    const prevBuild = { likes_count: build.likes_count, dislikes_count: build.dislikes_count };
-    let { likes_count, dislikes_count } = build;
-    if (prevReaction === "up") likes_count--;
-    if (prevReaction === "down") dislikes_count--;
-    if (reaction === "up") likes_count++;
-    if (reaction === "down") dislikes_count++;
-    setBuild((prev) => ({ ...prev, likes_count, dislikes_count }));
+    // 色だけ楽観的に切り替え。数値はサーバー応答で決まる（±1 計算しない）
     setUserReaction(reaction);
 
     try {
@@ -260,12 +274,10 @@ export function BuildDetailClient({
         setUserReaction(data.user_reaction);
         router.refresh();
       } else {
-        setBuild((prev) => ({ ...prev, ...prevBuild }));
-        setUserReaction(prevReaction);
+        await resyncFromServer();
       }
     } catch {
-      setBuild((prev) => ({ ...prev, ...prevBuild }));
-      setUserReaction(prevReaction);
+      await resyncFromServer();
     } finally {
       reactionPendingRef.current = false;
     }

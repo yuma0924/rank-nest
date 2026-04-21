@@ -144,21 +144,32 @@ export function TierDetailClient({
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
 
-  // 連打対策: 処理中は ref でブロックして 2 重発火を防ぐ
+  // 連打対策: 処理中はブロック
   const likePendingRef = useRef(false);
+
+  // エラー時のフォールバック: DB から真実を取り直す
+  const resyncFromServer = async () => {
+    try {
+      const r = await fetch(`/api/tiers/${initialTier.id}/my-state`);
+      if (!r.ok) return;
+      const data = await r.json();
+      setUserLiked(!!data.user_liked);
+      if (typeof data.likes_count === "number") {
+        setTier((prev) => ({ ...prev, likes_count: data.likes_count }));
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   const handleToggleLike = async () => {
     if (likePendingRef.current) return;
     likePendingRef.current = true;
 
-    const prevLiked = userLiked;
-    const prevCount = tier.likes_count;
-    const newLiked = !prevLiked;
-    const newCount = newLiked ? prevCount + 1 : prevCount - 1;
+    const newLiked = !userLiked;
 
-    // 楽観的更新
+    // 楽観的更新（±1 計算はせず、ボタン色だけ先に切り替え）
     setUserLiked(newLiked);
-    setTier((prev) => ({ ...prev, likes_count: newCount }));
 
     try {
       const res = await fetch(`/api/tiers/${tier.id}/reactions`, {
@@ -174,12 +185,11 @@ export function TierDetailClient({
         setTier((prev) => ({ ...prev, likes_count: data.likes_count }));
         router.refresh();
       } else {
-        setUserLiked(prevLiked);
-        setTier((prev) => ({ ...prev, likes_count: prevCount }));
+        // 429 や他のエラー: 楽観更新をキャンセルし DB から再同期
+        await resyncFromServer();
       }
     } catch {
-      setUserLiked(prevLiked);
-      setTier((prev) => ({ ...prev, likes_count: prevCount }));
+      await resyncFromServer();
     } finally {
       likePendingRef.current = false;
     }
