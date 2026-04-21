@@ -15,57 +15,65 @@ export async function GET(
     const { userHash, cookieUuid, isNewCookie } = getUserHash(request);
     const supabase = createAdminClient();
 
-    const [buildRow, userReactionRow, commentReactionsRows, commentCountsRows] = await Promise.all([
-      supabase
-        .from("builds")
-        .select("likes_count, dislikes_count")
-        .eq("id", buildId)
-        .maybeSingle(),
-      supabase
-        .from("build_reactions")
-        .select("reaction_type")
-        .eq("build_id", buildId)
-        .eq("user_hash", userHash)
-        .maybeSingle(),
-      supabase
-        .from("build_comment_reactions")
-        .select("build_comment_id, reaction_type, build_comments!inner(build_id)")
-        .eq("user_hash", userHash)
-        .eq("build_comments.build_id", buildId),
-      supabase
-        .from("build_comments")
-        .select("id, thumbs_up_count, thumbs_down_count")
-        .eq("build_id", buildId)
-        .eq("is_deleted", false),
-    ]);
+    // 1 クエリで build + user's build_reaction + 各コメント counts + user's
+    // comment_reaction をまとめて取得（consistent snapshot）。
+    const { data: raw } = await supabase
+      .from("builds")
+      .select(
+        `likes_count, dislikes_count,
+         build_reactions!left(reaction_type),
+         build_comments!left(
+           id, thumbs_up_count, thumbs_down_count,
+           build_comment_reactions!left(reaction_type)
+         )`
+      )
+      .eq("id", buildId)
+      .eq("build_reactions.user_hash", userHash)
+      .eq("build_comments.is_deleted", false)
+      .eq("build_comments.build_comment_reactions.user_hash", userHash)
+      .maybeSingle();
 
-    const commentReactions: Record<string, "up" | "down"> = {};
-    for (const r of (commentReactionsRows.data ?? []) as {
-      build_comment_id: string;
-      reaction_type: "up" | "down";
-    }[]) {
-      commentReactions[r.build_comment_id] = r.reaction_type;
-    }
-
-    const commentCounts: Record<string, { thumbs_up: number; thumbs_down: number }> = {};
-    for (const c of (commentCountsRows.data ?? []) as {
+    type RawComment = {
       id: string;
       thumbs_up_count: number;
       thumbs_down_count: number;
-    }[]) {
+      build_comment_reactions:
+        | { reaction_type: "up" | "down" }
+        | { reaction_type: "up" | "down" }[]
+        | null;
+    };
+    type RawRow = {
+      likes_count: number;
+      dislikes_count: number;
+      build_reactions:
+        | { reaction_type: "up" | "down" }
+        | { reaction_type: "up" | "down" }[]
+        | null;
+      build_comments: RawComment[] | null;
+    };
+
+    const buildData = raw as RawRow | null;
+    const userReactionRaw = buildData?.build_reactions;
+    const userReactionRow = Array.isArray(userReactionRaw)
+      ? userReactionRaw[0] ?? null
+      : userReactionRaw;
+
+    const commentReactions: Record<string, "up" | "down"> = {};
+    const commentCounts: Record<string, { thumbs_up: number; thumbs_down: number }> = {};
+    for (const c of buildData?.build_comments ?? []) {
       commentCounts[c.id] = {
         thumbs_up: c.thumbs_up_count,
         thumbs_down: c.thumbs_down_count,
       };
+      const r = c.build_comment_reactions;
+      const reaction = Array.isArray(r) ? r[0]?.reaction_type : r?.reaction_type;
+      if (reaction) commentReactions[c.id] = reaction;
     }
-
-    const buildData = buildRow.data as { likes_count: number; dislikes_count: number } | null;
 
     const headers = setCookieHeaders(cookieUuid, isNewCookie);
     return NextResponse.json(
       {
-        user_reaction:
-          (userReactionRow.data as { reaction_type: "up" | "down" } | null)?.reaction_type ?? null,
+        user_reaction: userReactionRow?.reaction_type ?? null,
         likes_count: buildData?.likes_count ?? 0,
         dislikes_count: buildData?.dislikes_count ?? 0,
         comment_reactions: commentReactions,
