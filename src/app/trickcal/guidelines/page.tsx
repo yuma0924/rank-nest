@@ -220,9 +220,12 @@ export default function GuidelinesPage() {
             権利者の方の削除依頼・その他のお問い合わせは、下記へご連絡ください。
           </p>
           <div className="rounded-2xl border border-border-primary bg-bg-tertiary px-3 py-3">
-            <p className="text-sm text-accent-secondary">
-              contact@trickle-rank.example.com
-            </p>
+            <a
+              href="mailto:contact@rank-nest.com"
+              className="text-sm text-accent-secondary underline-offset-2 hover:underline"
+            >
+              contact@rank-nest.com
+            </a>
           </div>
           <p className="text-xs text-text-muted">
             ※内容により返信できない場合があります。
