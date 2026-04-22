@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Zen_Maru_Gothic } from "next/font/google";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import "./globals.css";
+
+const GA_ID = "G-7R71E4VSZ0";
 
 const zenMaruGothic = Zen_Maru_Gothic({
   weight: ["400", "700"],
@@ -44,6 +47,22 @@ export default function RootLayout({
     <html lang="ja" className={`dark ${zenMaruGothic.variable}`} suppressHydrationWarning>
       <body className={zenMaruGothic.className}>
         <ThemeProvider>{children}</ThemeProvider>
+        {process.env.NODE_ENV === "production" && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_ID}');
+              `}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );
