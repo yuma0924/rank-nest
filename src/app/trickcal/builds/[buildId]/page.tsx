@@ -7,6 +7,7 @@ import {
 } from "@/lib/trickcal/cached-queries";
 import { notFound } from "next/navigation";
 import { BuildDetailClient } from "./build-detail-client";
+import { JsonLd } from "@/components/seo/json-ld";
 
 
 export const revalidate = 60;
@@ -192,8 +193,37 @@ export default async function BuildDetailPage({
   const commentsData = (commentsRaw ?? []).slice(0, 20);
   const hasMoreComments = (commentsRaw ?? []).length > 20;
 
+  const buildTitle =
+    build.title || `${build.element_label ?? ""}${BUILD_MODE_LABEL_MAP[build.mode] ?? build.mode}`;
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "rank-nest", item: "https://rank-nest.com" },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "みんなで決めるトリッカルランキング",
+        item: "https://rank-nest.com/trickcal",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: "人気編成ランキング",
+        item: "https://rank-nest.com/trickcal/builds",
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: buildTitle,
+        item: `https://rank-nest.com/trickcal/builds/${buildId}`,
+      },
+    ],
+  };
+
   return (
     <Suspense>
+      <JsonLd data={breadcrumbSchema} />
       <BuildDetailClient
         build={{
           id: build.id,

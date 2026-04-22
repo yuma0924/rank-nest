@@ -6,6 +6,7 @@ import {
 } from "@/lib/trickcal/cached-queries";
 import { notFound } from "next/navigation";
 import { TierDetailClient } from "./tier-detail-client";
+import { JsonLd } from "@/components/seo/json-ld";
 
 export const revalidate = 60;
 
@@ -99,33 +100,63 @@ export default async function TierDetailPage({
     }
   }
 
+  const tierTitle = tier.title || "無題のティア";
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "rank-nest", item: "https://rank-nest.com" },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "みんなで決めるトリッカルランキング",
+        item: "https://rank-nest.com/trickcal",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: "みんなのティア表",
+        item: "https://rank-nest.com/trickcal/tiers",
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: tierTitle,
+        item: `https://rank-nest.com/trickcal/tiers/${id}`,
+      },
+    ],
+  };
+
   return (
-    <TierDetailClient
-      tier={{
-        id: tier.id,
-        title: tier.title,
-        display_name: tier.display_name,
-        description: tier.description,
-        data: tier.data,
-        likes_count: tier.likes_count,
-        created_at: tier.created_at,
-      }}
-      characters={characters}
-      initialUserLiked={false}
-      initialIsOwner={false}
-      initialComments={{
-        comments: commentsData.map((c) => ({
-          id: c.id,
-          tier_id: c.tier_id,
-          display_name: c.display_name,
-          body: c.body,
-          thumbs_up_count: c.thumbs_up_count,
-          thumbs_down_count: c.thumbs_down_count,
-          created_at: c.created_at,
-          user_reaction: null,
-        })),
-        hasMore: hasMoreComments,
-      }}
-    />
+    <>
+      <JsonLd data={breadcrumbSchema} />
+      <TierDetailClient
+        tier={{
+          id: tier.id,
+          title: tier.title,
+          display_name: tier.display_name,
+          description: tier.description,
+          data: tier.data,
+          likes_count: tier.likes_count,
+          created_at: tier.created_at,
+        }}
+        characters={characters}
+        initialUserLiked={false}
+        initialIsOwner={false}
+        initialComments={{
+          comments: commentsData.map((c) => ({
+            id: c.id,
+            tier_id: c.tier_id,
+            display_name: c.display_name,
+            body: c.body,
+            thumbs_up_count: c.thumbs_up_count,
+            thumbs_down_count: c.thumbs_down_count,
+            created_at: c.created_at,
+            user_reaction: null,
+          })),
+          hasMore: hasMoreComments,
+        }}
+      />
+    </>
   );
 }

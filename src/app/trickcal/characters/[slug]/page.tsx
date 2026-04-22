@@ -7,6 +7,7 @@ import {
   getRelatedCharactersCached,
 } from "@/lib/trickcal/cached-queries";
 import { CharacterDetailClient } from "./character-detail-client";
+import { JsonLd } from "@/components/seo/json-ld";
 import type { Element } from "@/lib/trickcal/constants";
 import type { Item } from "@/types/trickcal";
 
@@ -193,8 +194,68 @@ export default async function CharacterPage({ params }: Props) {
     partTimeRewards: rewardItems.map((i) => ({ name: i.name, imageUrl: i.image_url })),
   };
 
+  const canonicalUrl = `https://rank-nest.com/trickcal/characters/${slug}`;
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "rank-nest", item: "https://rank-nest.com" },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "みんなで決めるトリッカルランキング",
+        item: "https://rank-nest.com/trickcal",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: "キャラクター",
+        item: "https://rank-nest.com/trickcal/ranking",
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: character.name,
+        item: canonicalUrl,
+      },
+    ],
+  };
+
+  // ランキングに乗っている（有効票 ≥ 4）キャラのみ AggregateRating を含める
+  const hasRating =
+    characterDetail.rank !== null &&
+    characterDetail.avgRating !== null &&
+    characterDetail.validVotesCount >= 4;
+
+  const characterSchema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "VideoGameCharacter",
+    name: character.name,
+    url: canonicalUrl,
+    image: character.image_url ?? undefined,
+    description: `トリッカル・もちもちほっぺ大作戦のキャラクター「${character.name}」の評価・スキル・コメントをまとめたページ。`,
+    inGame: {
+      "@type": "VideoGame",
+      name: "トリッカル・もちもちほっぺ大作戦",
+    },
+  };
+  if (hasRating) {
+    characterSchema.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: characterDetail.avgRating,
+      ratingCount: characterDetail.validVotesCount,
+      reviewCount: characterDetail.boardCommentsCount + characterDetail.validVotesCount,
+      bestRating: 5,
+      worstRating: 0.5,
+    };
+  }
+
   return (
-    <CharacterDetailClient
+    <>
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={characterSchema} />
+      <CharacterDetailClient
         character={characterDetail}
         relatedCharacters={relatedCharacters}
         initialComments={{
@@ -206,5 +267,6 @@ export default async function CharacterPage({ params }: Props) {
           nextCursor: hasMoreComments ? commentsData[commentsData.length - 1]?.id ?? null : null,
         }}
       />
+    </>
   );
 }
