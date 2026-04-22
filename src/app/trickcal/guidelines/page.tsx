@@ -104,7 +104,7 @@ function BulletItem({ children }: { children: React.ReactNode }) {
 
 export default function GuidelinesPage() {
   return (
-    <div className="mx-auto max-w-2xl pb-12">
+    <div className="max-w-2xl pb-12">
       {/* タイトル */}
       <div className="mb-2">
         <div className="flex items-center gap-3">
