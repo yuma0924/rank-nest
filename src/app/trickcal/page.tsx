@@ -9,6 +9,7 @@ import type { Element } from "@/lib/trickcal/constants";
 import { ROLE_ICON_MAP, POSITION_ICON_MAP, ATTACK_TYPE_ICON_MAP } from "@/lib/trickcal/constants";
 import { HomeSearchSection } from "./home-search-section";
 import { HomeBuildsSection } from "./home-builds-section";
+import { getRewardItemsCached } from "@/lib/trickcal/cached-queries";
 
 export const revalidate = 60;
 
@@ -167,6 +168,7 @@ function TeamIcon({ className }: { className?: string }) {
 
 export default async function Home() {
   const supabase = createAdminClient();
+  const rewardItemsPromise = getRewardItemsCached();
 
   // --- 依存関係のないクエリを全て Wave1 で並列発火 ---
   // (rankings, characters, 全コメント, 人気ティア, 人気編成)
@@ -465,6 +467,8 @@ export default async function Home() {
   charMap.forEach((v, k) => {
     charMapPlain[k] = { name: v.name, element: v.element, imageUrl: v.imageUrl };
   });
+
+  const rewardItems = await rewardItemsPromise;
 
   return (
     <div className="space-y-12 md:space-y-16">
@@ -989,6 +993,58 @@ export default async function Home() {
           gradientFrom="#3b82f6"
           gradientTo="#06b6d4"
         />
+        </div>
+      </section>
+
+      {/* ====== アルバイト報酬から探す (モバイルのみ。PCはサイドバーに表示) ====== */}
+      <section className="lg:hidden">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px]"
+              style={{ backgroundImage: "linear-gradient(135deg, #22c55e, #84cc16)" }}
+            >
+              <StaticIcon src="/icons/good.png" alt="" width={22} height={22} />
+            </span>
+            <h2 className="text-lg font-bold text-text-primary">アルバイト報酬から探す</h2>
+          </div>
+          <Link
+            href="/trickcal/rewards"
+            className="text-xs text-text-tertiary transition-colors hover:text-accent"
+          >
+            一覧ページ →
+          </Link>
+        </div>
+        <p className="mt-1 pl-[42px] text-xs text-text-tertiary">
+          素材をタップして、獲得できるキャラを確認
+        </p>
+        <div className="mt-3 grid grid-cols-6 gap-1.5">
+          {rewardItems.map((item) => (
+            <Link
+              key={item.id}
+              href={`/trickcal/rewards?item=${item.id}`}
+              title={item.name}
+              aria-label={item.name}
+              className="group relative aspect-square rounded-md transition-transform hover:scale-105"
+            >
+              {item.image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.image_url}
+                  alt={item.name}
+                  width={96}
+                  height={96}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full rounded-md object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center rounded-md bg-bg-tertiary text-xs text-text-muted">
+                  ?
+                </div>
+              )}
+            </Link>
+          ))}
         </div>
       </section>
     </div>

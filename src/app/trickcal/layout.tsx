@@ -4,6 +4,7 @@ import { Footer } from "@/components/trickcal/layout/footer";
 import { ScrollToTop } from "@/components/layout/scroll-to-top";
 import { NavigationProgress } from "@/components/layout/navigation-progress";
 import { SidebarCharacters } from "@/components/trickcal/layout/sidebar-characters";
+import { SidebarRewards } from "@/components/trickcal/layout/sidebar-rewards";
 import { getAllVisibleCharacters } from "@/lib/trickcal/cached-queries";
 
 export const metadata: Metadata = {
@@ -46,6 +47,7 @@ export default async function TrickcalLayout({
         <aside className="hidden lg:block">
           <div className="space-y-4">
             <SidebarCharacters characters={characters} />
+            <SidebarRewards />
           </div>
         </aside>
       </div>

@@ -594,10 +594,17 @@ export function CharacterDetailClient({
             )}
             {character.partTimeRewards.length > 0 && (
               <div className="rounded-[12px] border border-border-primary bg-bg-card-alpha-lighter px-2 py-2.5">
-                <p className="px-0.5 text-xs text-text-tertiary">アルバイト報酬</p>
+                <p className="px-0.5 text-xs text-text-tertiary">
+                  アルバイト報酬
+                  <span className="ml-1.5 text-[10px] text-text-muted">クリックで同報酬のキャラを表示</span>
+                </p>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1">
                   {character.partTimeRewards.map((reward, i) => (
-                    <div key={i} className="group relative shrink-0">
+                    <Link
+                      key={reward.id}
+                      href={`/trickcal/rewards?item=${reward.id}`}
+                      className="group relative shrink-0 rounded-md transition-all hover:brightness-110"
+                    >
                       {reward.imageUrl ? (
                         <img src={reward.imageUrl} alt={reward.name} width={104} height={104} loading="eager" fetchPriority="high" decoding="sync" className="h-[52px] w-[52px] rounded-md" />
                       ) : (
@@ -609,7 +616,7 @@ export function CharacterDetailClient({
                       <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-bg-input px-2 py-1 text-[11px] text-text-tertiary shadow-lg group-hover:block">
                         {reward.name}
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -699,10 +706,17 @@ export function CharacterDetailClient({
             )}
             {character.partTimeRewards.length > 0 && (
               <div className="flex flex-1 flex-col justify-center rounded-[10px] border border-border-primary bg-bg-card-alpha-light px-2.5 py-2">
-                <p className="text-[10px] text-text-muted">アルバイト報酬</p>
+                <p className="text-[10px] text-text-muted">
+                  アルバイト報酬
+                  <span className="ml-1 text-[9px]">タップで同報酬のキャラを表示</span>
+                </p>
                 <div className="mt-1 flex items-center gap-1">
                   {character.partTimeRewards.map((reward, i) => (
-                    <div key={i} className="relative shrink-0">
+                    <Link
+                      key={reward.id}
+                      href={`/trickcal/rewards?item=${reward.id}`}
+                      className="relative shrink-0 rounded transition-all hover:brightness-110"
+                    >
                       {reward.imageUrl ? (
                         <img src={reward.imageUrl} alt={reward.name} width={72} height={72} loading="eager" fetchPriority="high" decoding="sync" className="h-9 w-9 rounded" />
                       ) : (
@@ -711,7 +725,7 @@ export function CharacterDetailClient({
                       {i === 0 && (
                         <StaticIcon src="/icons/good.png" alt="" width={12} height={12} className="absolute -left-0.5 -top-0.5" />
                       )}
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>

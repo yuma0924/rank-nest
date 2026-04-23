@@ -72,6 +72,30 @@ export const getItemsByIdsCached = unstable_cache(
 );
 
 /**
+ * アルバイト報酬アイテム一覧を10分キャッシュ。
+ * サイドバー / ホームのコンパクト表示で繰り返し参照される。
+ */
+export type RewardItemCache = {
+  id: string;
+  name: string;
+  image_url: string | null;
+};
+
+export const getRewardItemsCached = unstable_cache(
+  async (): Promise<RewardItemCache[]> => {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("items")
+      .select("id, name, image_url")
+      .eq("item_type", "reward")
+      .order("name", { ascending: true });
+    return (data as RewardItemCache[] | null) ?? [];
+  },
+  ["trickcal-reward-items"],
+  { revalidate: 600, tags: ["items"] }
+);
+
+/**
  * 同属性・同レアリティの関連キャラ一覧 + 各キャラのランキング情報を
  * FK join で1クエリに取得して2分キャッシュ。
  * キャラの所属は admin 更新時のみ、ランキングは1日1回の再集計なので2分で十分。

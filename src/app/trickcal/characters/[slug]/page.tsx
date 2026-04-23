@@ -89,6 +89,12 @@ export interface ItemInfo {
   imageUrl: string | null;
 }
 
+export interface PartTimeReward {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+}
+
 export interface CharacterDetail {
   id: string;
   slug: string;
@@ -109,7 +115,7 @@ export interface CharacterDetail {
   rank: number | null;
   relic: RelicInfo | null;
   favoriteItem: ItemInfo | null;
-  partTimeRewards: ItemInfo[];
+  partTimeRewards: PartTimeReward[];
 }
 
 export interface RelatedCharacter {
@@ -218,7 +224,11 @@ export default async function CharacterPage({ params }: Props) {
     rank: ranking?.rank ?? null,
     relic,
     favoriteItem: favItem ? { name: favItem.name, imageUrl: favItem.image_url } : null,
-    partTimeRewards: rewardItems.map((i) => ({ name: i.name, imageUrl: i.image_url })),
+    partTimeRewards: rewardItems.map((i) => ({
+      id: i.id,
+      name: i.name,
+      imageUrl: i.image_url,
+    })),
   };
 
   const canonicalUrl = `https://rank-nest.com/trickcal/characters/${slug}`;
