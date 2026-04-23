@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { StaticIcon } from "@/components/ui/static-icon";
@@ -10,6 +11,21 @@ import { HomeSearchSection } from "./home-search-section";
 import { HomeBuildsSection } from "./home-builds-section";
 
 export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: "みんなで決めるトリッカルランキング - キャラ評価・編成・ティア表",
+  description:
+    "トリッカル・もちもちほっぺ大作戦の非公式データベース。全キャラの性能・評価・スキル、人気編成、みんなのティア表をプレイヤーの投票で共有。",
+  alternates: {
+    canonical: "/trickcal",
+  },
+  openGraph: {
+    title: "みんなで決めるトリッカルランキング",
+    description:
+      "トリッカルの全キャラ評価・人気編成・ティア表をプレイヤーの投票で共有する非公式データベース。",
+    url: "https://rank-nest.com/trickcal",
+  },
+};
 
 interface RankedChar {
   id: string;

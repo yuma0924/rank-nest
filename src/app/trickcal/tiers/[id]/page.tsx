@@ -39,12 +39,27 @@ export async function generateMetadata({
     };
   }
 
-  const title = tier.title || "無題のティア";
+  const tierTitle = tier.title || "無題のティア";
+  const author = tier.display_name ? ` by ${tier.display_name}` : "";
+  const charCount = Object.values(tier.data as Record<string, string[]>).flat().length;
+  const countPart = charCount > 0 ? `${charCount}体のキャラを` : "";
+  const descSnippet = tier.description
+    ? tier.description.slice(0, 60).replace(/\n/g, " ")
+    : "";
+
+  const metaTitle = `${tierTitle}${author} | みんなのティア表 | みんなで決めるトリッカルランキング`;
+  const metaDescription =
+    `トリッカルのティア表「${tierTitle}」${countPart}S〜Eのランクに配置。${descSnippet}`.trim();
+
   return {
-    title: `${title} | みんなのティア表 | みんなで決めるトリッカルランキング`,
-    description: `トリッカルのティア表「${title}」を見る`,
+    title: metaTitle,
+    description: metaDescription,
     alternates: {
       canonical: `/trickcal/tiers/${id}`,
+    },
+    openGraph: {
+      title: metaTitle,
+      description: metaDescription,
     },
   };
 }

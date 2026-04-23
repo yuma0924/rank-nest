@@ -38,13 +38,40 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "キャラクター | みんなで決めるトリッカルランキング" };
   }
 
+  // 性格・レア・役割/位置 をタグに
+  const attrs: string[] = [];
+  if (character.element) attrs.push(character.element);
+  if (character.rarity) attrs.push(character.rarity);
+  if (character.role && character.position) {
+    attrs.push(`${character.role}/${character.position}`);
+  } else if (character.role) attrs.push(character.role);
+  else if (character.position) attrs.push(character.position);
+  const attrPart = attrs.length > 0 ? ` (${attrs.join("・")})` : "";
+
+  // ランキング/評価情報（あれば description に付与）
+  const supabase = createAdminClient();
+  const { data: ranking } = await supabase
+    .from("character_rankings")
+    .select("avg_rating, valid_votes_count")
+    .eq("character_id", character.id)
+    .maybeSingle();
+  const ratingPart =
+    ranking && ranking.valid_votes_count >= 4
+      ? `評価 ${ranking.avg_rating.toFixed(1)}/5 (${ranking.valid_votes_count}件)。`
+      : "";
+
+  const title = `${character.name}${attrPart} の評価・スキル・コメント | みんなで決めるトリッカルランキング`;
+  const description = `トリッカルのキャラ「${character.name}」${attrPart}の評価・スキル詳細・遺物・みんなの投票コメント。${ratingPart}`;
+
   return {
-    title: `${character.name} | みんなで決めるトリッカルランキング`,
-    description: `${character.name}の性能・評価・みんなのコメント`,
+    title,
+    description,
     alternates: {
       canonical: `/trickcal/characters/${slug}`,
     },
     openGraph: {
+      title,
+      description,
       images: character.image_url ? [{ url: character.image_url }] : undefined,
     },
   };

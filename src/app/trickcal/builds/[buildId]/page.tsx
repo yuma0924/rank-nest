@@ -79,13 +79,26 @@ export async function generateMetadata({
   }
 
   const modeLabel = BUILD_MODE_LABEL_MAP[build.mode] ?? build.mode;
-  const title = build.title || `${build.element_label ?? ""}${modeLabel}`;
+  const buildTitle = build.title || `${build.element_label ?? ""}${modeLabel}`;
+  const author = build.display_name ? ` by ${build.display_name}` : "";
+  const tags = [build.element_label, modeLabel].filter(Boolean).join("・");
+  const commentSnippet = build.comment
+    ? build.comment.slice(0, 60).replace(/\n/g, " ")
+    : "";
+
+  const metaTitle = `${buildTitle} (${tags})${author} | 人気編成ランキング | みんなで決めるトリッカルランキング`;
+  const metaDescription =
+    `トリッカルの${tags}編成「${buildTitle}」の詳細・メンバー構成・みんなのコメント。${commentSnippet}`.trim();
 
   return {
-    title: `${title} | 人気編成ランキング | みんなで決めるトリッカルランキング`,
-    description: `トリッカルの編成「${title}」の詳細・コメント`,
+    title: metaTitle,
+    description: metaDescription,
     alternates: {
       canonical: `/trickcal/builds/${buildId}`,
+    },
+    openGraph: {
+      title: metaTitle,
+      description: metaDescription,
     },
   };
 }
