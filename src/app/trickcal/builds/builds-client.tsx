@@ -291,6 +291,8 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
               setSortKey("newest");
               setFormOpen(false);
               showToast("編成を投稿しました！");
+              // Client Router Cache を無効化して戻ったとき最新が見えるように
+              router.refresh();
               setTimeout(() => {
                 document.getElementById("build-list-top")?.scrollIntoView({ behavior: "smooth" });
               }, 300);
