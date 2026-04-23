@@ -1,5 +1,6 @@
 export const SITE_NAME = "みんなで決めるトリッカルランキング";
 export const DEFAULT_DISPLAY_NAME = "名無しの教主";
+export const MAX_DISPLAY_NAME_LENGTH = 30;
 
 export const ELEMENTS = ["純粋", "冷静", "狂気", "活発", "憂鬱"] as const;
 export type Element = (typeof ELEMENTS)[number];

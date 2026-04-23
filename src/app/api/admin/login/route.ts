@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import {
   createAdminToken,
   ADMIN_TOKEN_COOKIE,
 } from "@/app/admin/_lib/auth";
+
+// タイミングサイドチャネルを避けるための定時比較。
+// 長さが異なる場合でも一定時間を消費するため、先にダミー比較を走らせる。
+function constantTimeEquals(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a, "utf8");
+  const bBuf = Buffer.from(b, "utf8");
+  if (aBuf.length !== bBuf.length) {
+    timingSafeEqual(aBuf, aBuf);
+    return false;
+  }
+  return timingSafeEqual(aBuf, bBuf);
+}
 
 /**
  * 管理者ログイン API
@@ -30,7 +43,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (password !== adminPassword) {
+    if (!constantTimeEquals(password, adminPassword)) {
       return NextResponse.json(
         { error: "パスワードが正しくありません" },
         { status: 401 }

@@ -7,7 +7,7 @@ import {
   checkRateLimit,
   setCookieHeaders,
 } from "@/app/api/_helpers";
-import { DEFAULT_DISPLAY_NAME } from "@/lib/trickcal/constants";
+import { DEFAULT_DISPLAY_NAME, MAX_DISPLAY_NAME_LENGTH } from "@/lib/trickcal/constants";
 
 const MAX_BODY_LENGTH = 300;
 const MAX_BODY_LINES = 8;
@@ -135,6 +135,18 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+  }
+
+  if (
+    display_name !== undefined &&
+    display_name !== null &&
+    typeof display_name === "string" &&
+    display_name.length > MAX_DISPLAY_NAME_LENGTH
+  ) {
+    return NextResponse.json(
+      { error: `display_name は${MAX_DISPLAY_NAME_LENGTH}文字以内で入力してください` },
+      { status: 400 }
+    );
   }
 
   if (body !== undefined && body !== null) {

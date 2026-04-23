@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_DISPLAY_NAME } from "@/lib/trickcal/constants";
+import { DEFAULT_DISPLAY_NAME, MAX_DISPLAY_NAME_LENGTH } from "@/lib/trickcal/constants";
 import type { TierComment } from "@/types/trickcal";
 import {
   getUserHash,
@@ -231,6 +231,17 @@ export async function POST(
     if (commentBody.split("\n").length > 8) {
       return NextResponse.json(
         { error: "コメントは8行以内で入力してください" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      display_name &&
+      typeof display_name === "string" &&
+      display_name.length > MAX_DISPLAY_NAME_LENGTH
+    ) {
+      return NextResponse.json(
+        { error: `display_name は${MAX_DISPLAY_NAME_LENGTH}文字以内で入力してください` },
         { status: 400 }
       );
     }

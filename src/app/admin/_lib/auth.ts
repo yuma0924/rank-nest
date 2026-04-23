@@ -4,9 +4,9 @@ const ADMIN_TOKEN_COOKIE = "admin_token";
 const TOKEN_EXPIRY = "24h";
 
 function getJwtSecret(): Uint8Array {
-  const secret = process.env.ADMIN_JWT_SECRET || process.env.ADMIN_PASSWORD;
+  const secret = process.env.ADMIN_JWT_SECRET;
   if (!secret) {
-    throw new Error("ADMIN_JWT_SECRET or ADMIN_PASSWORD is not set");
+    throw new Error("ADMIN_JWT_SECRET is not set");
   }
   return new TextEncoder().encode(secret);
 }
