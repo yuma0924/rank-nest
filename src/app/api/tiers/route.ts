@@ -166,32 +166,7 @@ export async function POST(request: NextRequest) {
     const { userHash, cookieUuid, isNewCookie } = getUserHash(request);
     const supabase = createAdminClient();
 
-    // BAN チェック
-    if (await isUserBanned(supabase, userHash)) {
-      return NextResponse.json(
-        { error: "投稿できませんでした。時間をおいて再度お試しください。" },
-        { status: 403 }
-      );
-    }
-
-    // レートリミットチェック
-    const { limited, retryAfter } = await checkRateLimit(
-      supabase,
-      "tiers",
-      { user_hash: userHash },
-      TIER_RATE_LIMIT_SECONDS
-    );
-
-    if (limited) {
-      return NextResponse.json(
-        {
-          error: `投稿間隔が短すぎます。${retryAfter}秒後に再度お試しください。`,
-          retry_after: retryAfter,
-        },
-        { status: 429 }
-      );
-    }
-
+    // JSON パース + バリデーションを DB 呼び出し前に実施 (無駄な DB 往復を避ける)
     let parsed: {
       data?: Record<string, string[]>;
       title?: string;
@@ -210,7 +185,6 @@ export async function POST(request: NextRequest) {
 
     const { data, title, display_name, description } = parsed;
 
-    // バリデーション
     if (!data || typeof data !== "object") {
       return NextResponse.json(
         { error: "data は必須です" },
@@ -218,7 +192,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 有効なティアラベルのみ許可
     const validLabels = new Set<string>(TIER_LABELS);
     for (const key of Object.keys(data)) {
       if (!validLabels.has(key)) {
@@ -229,7 +202,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 少なくとも1キャラは配置されていること
     const allCharIds = Object.values(data).flat();
     if (allCharIds.length === 0) {
       return NextResponse.json(
@@ -238,7 +210,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 重複キャラチェック
     const charIdSet = new Set(allCharIds);
     if (charIdSet.size !== allCharIds.length) {
       return NextResponse.json(
@@ -247,12 +218,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // キャラクターの存在確認
-    const { data: chars } = await supabase
-      .from("characters")
-      .select("id")
-      .in("id", allCharIds);
+    // BAN / レートリミット / キャラ存在確認を並列実行
+    const [banned, rateLimit, charsResult] = await Promise.all([
+      isUserBanned(supabase, userHash),
+      checkRateLimit(
+        supabase,
+        "tiers",
+        { user_hash: userHash },
+        TIER_RATE_LIMIT_SECONDS
+      ),
+      supabase.from("characters").select("id").in("id", allCharIds),
+    ]);
 
+    if (banned) {
+      return NextResponse.json(
+        { error: "投稿できませんでした。時間をおいて再度お試しください。" },
+        { status: 403 }
+      );
+    }
+
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        {
+          error: `投稿間隔が短すぎます。${rateLimit.retryAfter}秒後に再度お試しください。`,
+          retry_after: rateLimit.retryAfter,
+        },
+        { status: 429 }
+      );
+    }
+
+    const chars = charsResult.data;
     if (!chars || chars.length !== allCharIds.length) {
       return NextResponse.json(
         { error: "無効なキャラクターが含まれています" },

@@ -251,32 +251,6 @@ export async function POST(request: NextRequest) {
     const { userHash, cookieUuid, isNewCookie } = getUserHash(request);
     const supabase = createAdminClient();
 
-    // BAN チェック
-    if (await isUserBanned(supabase, userHash)) {
-      return NextResponse.json(
-        { error: "投稿できませんでした。時間をおいて再度お試しください。" },
-        { status: 403 }
-      );
-    }
-
-    // レートリミットチェック（30秒に1回）
-    const { limited, retryAfter } = await checkRateLimit(
-      supabase,
-      "builds",
-      { user_hash: userHash },
-      BUILD_RATE_LIMIT_SECONDS
-    );
-
-    if (limited) {
-      return NextResponse.json(
-        {
-          error: `投稿間隔が短すぎます。${retryAfter}秒後に再度お試しください。`,
-          retry_after: retryAfter,
-        },
-        { status: 429 }
-      );
-    }
-
     let parsed: {
       mode?: string;
       members?: string[];
@@ -363,20 +337,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // メンバーの存在確認 + 属性取得
-    const { data: chars, error: charsError } = await supabase
-      .from("characters")
-      .select("id, element")
-      .in("id", actualMembers);
+    // BAN / レートリミット / キャラ存在 / 重複編成チェックを並列実行
+    const [banned, rateLimit, charsResult, duplicatesResult] = await Promise.all([
+      isUserBanned(supabase, userHash),
+      checkRateLimit(
+        supabase,
+        "builds",
+        { user_hash: userHash },
+        BUILD_RATE_LIMIT_SECONDS
+      ),
+      supabase.from("characters").select("id, element").in("id", actualMembers),
+      supabase
+        .from("builds")
+        .select("id, members")
+        .eq("user_hash", userHash)
+        .eq("mode", validModePost)
+        .eq("is_deleted", false),
+    ]);
 
-    if (charsError) {
+    if (banned) {
+      return NextResponse.json(
+        { error: "投稿できませんでした。時間をおいて再度お試しください。" },
+        { status: 403 }
+      );
+    }
+
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        {
+          error: `投稿間隔が短すぎます。${rateLimit.retryAfter}秒後に再度お試しください。`,
+          retry_after: rateLimit.retryAfter,
+        },
+        { status: 429 }
+      );
+    }
+
+    if (charsResult.error) {
       return NextResponse.json(
         { error: "キャラクター情報の取得に失敗しました" },
         { status: 500 }
       );
     }
 
-    const charList = chars as { id: string; element: string | null }[] | null;
+    const charList = charsResult.data as { id: string; element: string | null }[] | null;
 
     if (!charList || charList.length !== actualMembers.length) {
       return NextResponse.json(
@@ -403,15 +406,8 @@ export async function POST(request: NextRequest) {
 
     const actualPartySize = actualMembers.length;
 
-    // 同一ユーザー・同一モード・同一メンバー構成の重複チェック
     const sortedMembers = [...actualMembers].sort();
-    const { data: duplicates } = await supabase
-      .from("builds")
-      .select("id, members")
-      .eq("user_hash", userHash)
-      .eq("mode", validModePost)
-      .eq("is_deleted", false);
-
+    const duplicates = duplicatesResult.data;
     if (duplicates) {
       const isDuplicate = duplicates.some((b) => {
         const existing = b.members.filter((id: string | null) => id !== null).sort();

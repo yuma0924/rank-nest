@@ -193,10 +193,11 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
         return;
       }
 
-      // サーバ側 ISR は revalidatePath 済みだが、Client Router Cache が
-      // 一覧ページを 30s 保持するため明示的に無効化する
-      router.refresh();
-      router.push(`/trickcal/tiers/${result.tier.id}`);
+      // サーバ側 ISR は revalidatePath 済み。
+      // Client Router Cache が一覧ページを保持しているため、完全に新しい
+      // セッションを始めるハードナビゲーションで戻るときの表示を確実に最新にする。
+      // ?created=1 で詳細ページ側に「投稿しました」トーストを出させる。
+      window.location.href = `/trickcal/tiers/${result.tier.id}?created=1`;
     } catch {
       setError("投稿に失敗しました");
     } finally {

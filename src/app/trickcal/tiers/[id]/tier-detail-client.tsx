@@ -150,6 +150,19 @@ export function TierDetailClient({
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
 
+  // ティア作成直後 (/tiers/new から ?created=1 付きで遷移) は成功トーストを出す
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("created") === "1") {
+      showToast("ティアを投稿しました！");
+      params.delete("created");
+      const newSearch = params.toString();
+      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [showToast]);
+
   // 通報
   const [reportTarget, setReportTarget] = useState<{
     type: "tier_comment";
