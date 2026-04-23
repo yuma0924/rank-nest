@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminAuth } from "../_middleware";
+
+/**
+ * キャラ情報が変わった時に呼ぶキャッシュ無効化。
+ * unstable_cache の "characters" タグ + 関連ルートの ISR を一括クリア。
+ */
+function revalidateCharacterCaches(slug?: string) {
+  revalidateTag("characters");
+  revalidatePath("/trickcal");
+  revalidatePath("/trickcal/ranking");
+  revalidatePath("/trickcal/tiers");
+  revalidatePath("/trickcal/builds");
+  revalidatePath("/trickcal/characters/[slug]", "page");
+  if (slug) revalidatePath(`/trickcal/characters/${slug}`);
+}
 
 /**
  * 全キャラクター取得 API
@@ -60,6 +75,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    revalidateCharacterCaches(
+      (data as { slug?: string } | null)?.slug ?? undefined
+    );
+
     return NextResponse.json({ character: data }, { status: 201 });
   } catch {
     return NextResponse.json(
@@ -113,6 +132,11 @@ export async function PATCH(request: NextRequest) {
       } else {
         results.push(data);
       }
+    }
+
+    if (results.length > 0) {
+      // 更新対象の slug が多い場合でもタグで一括無効化すれば十分
+      revalidateCharacterCaches();
     }
 
     return NextResponse.json({ updated: results, errors });

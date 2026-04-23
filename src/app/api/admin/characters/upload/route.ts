@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminAuth } from "../../_middleware";
 import sharp from "sharp";
-import { writeFileSync, mkdirSync } from "fs";
-import { join } from "path";
 
 const BUCKET_NAME = "character-icons";
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -14,10 +13,8 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
  * POST /api/admin/characters/upload
  * FormData: { file: File, characterId: string }
  *
- * 1. WebP変換（解像度維持、画質90）
- * 2. Supabase Storageにバックアップ保存
- * 3. public/characters/にローカル保存（Vercel CDN配信用）
- * 4. DBのimage_urlをローカルパスで更新
+ * WebP 変換 → Supabase Storage に保存 → public URL を image_url に保存。
+ * Vercel の filesystem は read-only なのでローカル書き出しは不可。
  */
 export async function POST(request: NextRequest) {
   const authError = await requireAdminAuth(request);
@@ -66,29 +63,32 @@ export async function POST(request: NextRequest) {
 
     const filePath = `${characterId}.webp`;
 
-    // Supabase Storageにバックアップ保存
-    await supabase.storage
+    // Supabase Storage にアップロード
+    const { error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(filePath, webpBuffer, {
         contentType: "image/webp",
         upsert: true,
       });
 
-    // public/characters/にローカル保存
-    try {
-      const publicDir = join(process.cwd(), "public", "characters");
-      mkdirSync(publicDir, { recursive: true });
-      writeFileSync(join(publicDir, filePath), webpBuffer);
-    } catch {
-      // Vercel上ではファイルシステム書き込み不可（スクリプトで対応）
+    if (uploadError) {
+      return NextResponse.json(
+        { error: `アップロード失敗: ${uploadError.message}` },
+        { status: 500 }
+      );
     }
 
-    // DBのimage_urlをローカルパスで更新
-    const localUrl = `/characters/${filePath}`;
+    // 公開 URL を取得。キャッシュバスト用に updated_at 相当の suffix を付ける
+    const { data: publicUrlData } = supabase.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(filePath);
+    const publicUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
+
+    // DB の image_url を更新
     const { error: updateError } = await supabase
       .from("characters")
       .update({
-        image_url: localUrl,
+        image_url: publicUrl,
         updated_at: new Date().toISOString(),
       })
       .eq("id", characterId);
@@ -100,7 +100,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ url: localUrl });
+    // 関連キャッシュを一括無効化
+    revalidateTag("characters");
+    revalidatePath("/trickcal");
+    revalidatePath("/trickcal/ranking");
+    revalidatePath("/trickcal/tiers");
+    revalidatePath("/trickcal/builds");
+    revalidatePath("/trickcal/characters/[slug]", "page");
+
+    return NextResponse.json({ url: publicUrl });
   } catch {
     return NextResponse.json(
       { error: "アップロードに失敗しました" },
