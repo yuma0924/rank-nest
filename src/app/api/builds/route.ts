@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_DISPLAY_NAME, MAX_DISPLAY_NAME_LENGTH } from "@/lib/trickcal/constants";
 import type { Build } from "@/types/trickcal";
@@ -450,6 +451,10 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    revalidatePath("/trickcal/builds");
+    revalidatePath("/trickcal");
+    revalidateTag("builds");
 
     return NextResponse.json(
       { build: newBuild, updated: false },
