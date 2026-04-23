@@ -45,9 +45,6 @@ export default async function TrickcalLayout({
         <main className="bg-bg-primary">{children}</main>
         <aside className="hidden lg:block">
           <div className="space-y-4">
-            <div className="flex h-[600px] items-center justify-center rounded-2xl border border-border-primary bg-bg-card">
-              <span className="text-xs text-text-muted">AD</span>
-            </div>
             <SidebarCharacters characters={characters} />
           </div>
         </aside>
