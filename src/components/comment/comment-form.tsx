@@ -154,11 +154,6 @@ export function CommentForm({
           maxLength={MAX_CHARS}
           className="w-full resize-none rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted transition-colors focus:border-accent/50 focus:outline-none"
         />
-        <div className="mt-1 flex justify-end text-[10px] text-text-tertiary">
-          <span className={isOverLimit ? "text-thumbs-down" : ""}>
-            {body.length}/{MAX_CHARS}
-          </span>
-        </div>
       </div>
 
       {/* 画像添付 */}

@@ -751,9 +751,6 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
         <div>
           <label className="mb-1 block text-sm text-text-secondary">
             コメント<span className="text-[#f87171]">*</span>
-            <span className="ml-2 text-xs text-text-tertiary">
-              {comment.length}/200
-            </span>
           </label>
           <textarea
             value={comment}

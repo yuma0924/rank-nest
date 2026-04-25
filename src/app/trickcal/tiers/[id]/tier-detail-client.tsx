@@ -654,19 +654,14 @@ export function TierDetailClient({
                 maxLength={50}
                 className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
               />
-              <div>
-                <textarea
-                  value={commentBody}
-                  onChange={(e) => setCommentBody(e.target.value)}
-                  placeholder="コメントを入力..."
-                  maxLength={300}
-                  rows={3}
-                  className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none resize-none"
-                />
-                <div className="mt-1 text-right text-xs text-text-tertiary">
-                  {commentBody.length}/300
-                </div>
-              </div>
+              <textarea
+                value={commentBody}
+                onChange={(e) => setCommentBody(e.target.value)}
+                placeholder="コメントを入力..."
+                maxLength={300}
+                rows={3}
+                className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none resize-none"
+              />
               {commentError && (
                 <p className="text-sm text-thumbs-down">{commentError}</p>
               )}
