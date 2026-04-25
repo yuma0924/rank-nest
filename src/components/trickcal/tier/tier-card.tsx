@@ -64,7 +64,7 @@ export function TierCard({
             <h3 className="min-w-0 truncate text-sm font-bold text-text-primary">
               {title || "無題のティア"}
             </h3>
-            <span className="shrink-0 text-xs text-text-muted">
+            <span className="shrink-0 text-xs text-text-muted" suppressHydrationWarning>
               {formatDate(createdAt)}
             </span>
           </div>

@@ -550,7 +550,7 @@ export function TierDetailClient({
                   <span aria-hidden>·</span>
                 </>
               )}
-              <span>{formatDate(tier.created_at)}</span>
+              <span suppressHydrationWarning>{formatDate(tier.created_at)}</span>
             </div>
             {tier.description && (
               <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
@@ -896,7 +896,7 @@ const SortableCommentList = memo(function SortableCommentList({
                     <span className="text-base font-medium text-text-primary">
                       {c.display_name || "名無しの教主"}
                     </span>
-                    <span className="text-xs md:text-sm text-text-muted">{formatDate(c.created_at)}</span>
+                    <span className="text-xs md:text-sm text-text-muted" suppressHydrationWarning>{formatDate(c.created_at)}</span>
                   </div>
                 </div>
                 <p className="mt-2.5 whitespace-pre-wrap text-base text-text-secondary leading-relaxed">

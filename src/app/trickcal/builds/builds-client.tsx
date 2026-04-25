@@ -680,7 +680,7 @@ function BuildCard({
       {/* フッター: 日時 + コメント数 + リアクション */}
       <div className="mt-auto pt-2 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-xs md:text-sm text-text-muted">
-          <span>{formatDate(build.updated_at)}</span>
+          <span suppressHydrationWarning>{formatDate(build.updated_at)}</span>
           {build.comments_count > 0 && (
             <>
               <span>·</span>
