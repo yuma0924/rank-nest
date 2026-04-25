@@ -15,6 +15,8 @@ interface CommentCardProps {
   createdAt: string;
   isLatestVote?: boolean;
   isDeleted?: boolean;
+  imageUrl?: string | null;
+  onImageClick?: (url: string) => void;
   userReaction?: ReactionState;
   onReact?: (commentId: string, reaction: ReactionState) => void;
   onReport?: (commentId: string) => void;
@@ -40,6 +42,8 @@ export function CommentCard({
   thumbsDownCount,
   createdAt,
   isDeleted = false,
+  imageUrl,
+  onImageClick,
   userReaction,
   onReact,
   onReport,
@@ -90,6 +94,24 @@ export function CommentCard({
       <p className="mt-2.5 whitespace-pre-wrap text-base text-text-secondary leading-relaxed">
         {body}
       </p>
+
+      {imageUrl && (
+        <button
+          type="button"
+          onClick={() => onImageClick?.(imageUrl)}
+          className="mt-2.5 block overflow-hidden rounded-xl border border-border-primary transition-opacity hover:opacity-90"
+          aria-label="画像を拡大表示"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageUrl}
+            alt="添付画像"
+            loading="lazy"
+            decoding="async"
+            className="max-h-[160px] max-w-[240px] object-contain"
+          />
+        </button>
+      )}
 
       <div className="mt-4 flex items-center gap-4 text-text-muted text-xs md:text-sm">
         <ThumbsUpDown

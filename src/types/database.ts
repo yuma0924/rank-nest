@@ -90,6 +90,7 @@ export interface Database {
           is_deleted: boolean;
           thumbs_up_count: number;
           thumbs_down_count: number;
+          image_url: string | null;
           game_slug: string;
           created_at: string;
           updated_at: string;
@@ -106,6 +107,7 @@ export interface Database {
           is_deleted?: boolean;
           thumbs_up_count?: number;
           thumbs_down_count?: number;
+          image_url?: string | null;
           game_slug?: string;
           created_at?: string;
           updated_at?: string;
@@ -122,6 +124,7 @@ export interface Database {
           is_deleted?: boolean;
           thumbs_up_count?: number;
           thumbs_down_count?: number;
+          image_url?: string | null;
           game_slug?: string;
           created_at?: string;
           updated_at?: string;

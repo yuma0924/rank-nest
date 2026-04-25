@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getUserHash,
@@ -8,11 +9,18 @@ import {
   setCookieHeaders,
 } from "@/app/api/_helpers";
 import { DEFAULT_DISPLAY_NAME, MAX_DISPLAY_NAME_LENGTH } from "@/lib/trickcal/constants";
+import { moderateImage } from "@/lib/moderation";
 
 const MAX_BODY_LENGTH = 300;
 const MAX_BODY_LINES = 8;
 const VOTE_RATE_LIMIT_SECONDS = 30;
 const BOARD_RATE_LIMIT_SECONDS = 10;
+
+// 画像関連
+const COMMENT_IMAGES_BUCKET = "comment-images";
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const IMAGE_MAX_DIMENSION = 1600;
 
 /**
  * コメント取得 API
@@ -79,33 +87,70 @@ export async function GET(request: NextRequest) {
 /**
  * コメント投稿 API
  * POST /api/comments
- * Body: {
- *   character_id: string,
- *   comment_type: "vote" | "board",
- *   rating?: number (0.5〜5.0, 0.5刻み。voteの場合必須),
- *   body?: string (最大300文字 / 最大8行),
- *   display_name?: string
- * }
+ *
+ * 受付形式:
+ *   - multipart/form-data: 画像添付対応（推奨）
+ *     fields: character_id, comment_type, rating?, body?, display_name?, image?
+ *   - application/json: 後方互換（画像添付なし）
  */
 export async function POST(request: NextRequest) {
-  let parsed: {
-    character_id?: string;
-    comment_type?: string;
-    rating?: number;
-    body?: string;
-    display_name?: string;
-  };
+  const contentType = request.headers.get("content-type") ?? "";
+  const isMultipart = contentType.includes("multipart/form-data");
 
-  try {
-    parsed = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+  let character_id: string | undefined;
+  let comment_type: string | undefined;
+  let rating: number | undefined;
+  let body: string | undefined;
+  let display_name: string | undefined;
+  let imageFile: File | null = null;
+
+  if (isMultipart) {
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid form data" },
+        { status: 400 }
+      );
+    }
+    character_id = (formData.get("character_id") as string | null) ?? undefined;
+    comment_type = (formData.get("comment_type") as string | null) ?? undefined;
+    const ratingRaw = formData.get("rating");
+    if (ratingRaw !== null && ratingRaw !== "") {
+      const parsed = Number(ratingRaw);
+      if (Number.isFinite(parsed)) rating = parsed;
+    }
+    const bodyRaw = formData.get("body");
+    body = typeof bodyRaw === "string" ? bodyRaw : undefined;
+    const displayRaw = formData.get("display_name");
+    display_name = typeof displayRaw === "string" ? displayRaw : undefined;
+    const fileRaw = formData.get("image");
+    if (fileRaw instanceof File && fileRaw.size > 0) {
+      imageFile = fileRaw;
+    }
+  } else {
+    let parsed: {
+      character_id?: string;
+      comment_type?: string;
+      rating?: number;
+      body?: string;
+      display_name?: string;
+    };
+    try {
+      parsed = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+    character_id = parsed.character_id;
+    comment_type = parsed.comment_type;
+    rating = parsed.rating;
+    body = parsed.body;
+    display_name = parsed.display_name;
   }
-
-  const { character_id, comment_type, rating, body, display_name } = parsed;
 
   // バリデーション
   if (!character_id) {
@@ -160,6 +205,40 @@ export async function POST(request: NextRequest) {
     if (lines.length > MAX_BODY_LINES) {
       return NextResponse.json(
         { error: `body must be ${MAX_BODY_LINES} lines or less` },
+        { status: 400 }
+      );
+    }
+  }
+
+  // 画像のバリデーション + 変換（モデレーションは認証/レート制限後にコスト節約のため後で実行）
+  let webpBuffer: Buffer | null = null;
+  if (imageFile) {
+    if (imageFile.size > MAX_IMAGE_SIZE) {
+      return NextResponse.json(
+        { error: "画像サイズは2MB以下にしてください" },
+        { status: 400 }
+      );
+    }
+    if (!ALLOWED_IMAGE_TYPES.includes(imageFile.type)) {
+      return NextResponse.json(
+        { error: "PNG, JPEG, WebP のみアップロード可能です" },
+        { status: 400 }
+      );
+    }
+    try {
+      const arrayBuffer = await imageFile.arrayBuffer();
+      webpBuffer = await sharp(Buffer.from(arrayBuffer))
+        .rotate() // EXIF Orientation を反映
+        .resize(IMAGE_MAX_DIMENSION, IMAGE_MAX_DIMENSION, {
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 90 })
+        .toBuffer();
+    } catch (e) {
+      console.error("sharp decode error:", e);
+      return NextResponse.json(
+        { error: "画像を読み込めませんでした" },
         { status: 400 }
       );
     }
@@ -221,6 +300,49 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // 画像モデレーション
+  let imageUrl: string | null = null;
+  let uploadedPath: string | null = null;
+  if (webpBuffer) {
+    try {
+      const moderation = await moderateImage(webpBuffer);
+      if (moderation.flagged) {
+        return NextResponse.json(
+          { error: "画像が利用規約に反する可能性があるため投稿できません" },
+          { status: 400 }
+        );
+      }
+    } catch {
+      return NextResponse.json(
+        { error: "画像のチェックに失敗しました。少し待って再度お試しください" },
+        { status: 503 }
+      );
+    }
+
+    // Storage アップロード（ファイル名は UUID 先採番）
+    const filename = `${crypto.randomUUID()}.webp`;
+    const { error: uploadError } = await supabase.storage
+      .from(COMMENT_IMAGES_BUCKET)
+      .upload(filename, webpBuffer, {
+        contentType: "image/webp",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("comment image upload error:", uploadError.message);
+      return NextResponse.json(
+        { error: "画像のアップロードに失敗しました" },
+        { status: 500 }
+      );
+    }
+
+    uploadedPath = filename;
+    const { data: publicUrlData } = supabase.storage
+      .from(COMMENT_IMAGES_BUCKET)
+      .getPublicUrl(filename);
+    imageUrl = publicUrlData.publicUrl;
+  }
+
   // 投票コメントの場合: 既存の is_latest_vote を false に更新
   if (comment_type === "vote") {
     await supabase
@@ -243,12 +365,20 @@ export async function POST(request: NextRequest) {
       body: body ?? null,
       display_name: display_name || DEFAULT_DISPLAY_NAME,
       is_latest_vote: comment_type === "vote" ? true : null,
+      image_url: imageUrl,
     })
     .select()
     .single();
 
   if (insertError) {
     console.error("POST /api/comments insert error:", insertError.message);
+    // ロールバック: アップロード済み画像があれば削除
+    if (uploadedPath) {
+      await supabase.storage
+        .from(COMMENT_IMAGES_BUCKET)
+        .remove([uploadedPath])
+        .catch((e) => console.error("rollback storage remove failed:", e));
+    }
     return NextResponse.json({ error: "サーバーエラーが発生しました" }, { status: 500 });
   }
 

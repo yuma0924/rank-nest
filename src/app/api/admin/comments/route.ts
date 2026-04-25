@@ -3,6 +3,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminAuth } from "../_middleware";
 
 /**
+ * comment-images バケットの公開URLからファイルパス（バケット内）を抽出する。
+ * 例: https://xxx.supabase.co/storage/v1/object/public/comment-images/abc.webp
+ *     → "abc.webp"
+ */
+function extractCommentImagePath(url: string): string | null {
+  const match = url.match(/\/storage\/v1\/object\/public\/comment-images\/(.+?)(?:\?.*)?$/);
+  return match?.[1] ?? null;
+}
+
+/**
  * コメント一覧取得 API
  * GET /api/admin/comments?page=1&limit=50&type=all&deleted=false
  */
@@ -72,7 +82,7 @@ export async function PATCH(request: NextRequest) {
     // コメント情報を取得
     const { data: comment, error: fetchError } = await supabase
       .from("comments")
-      .select("id, comment_type, character_id, user_hash, is_latest_vote")
+      .select("id, comment_type, character_id, user_hash, is_latest_vote, image_url")
       .eq("id", id)
       .single();
 
@@ -83,13 +93,35 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // 削除時は添付画像も Storage から消し、image_url を NULL にする
+    // （復元しても画像は戻らない仕様。Storage を肥大化させない）
+    const updatePayload: {
+      is_deleted: boolean;
+      updated_at: string;
+      image_url?: null;
+    } = {
+      is_deleted: isDelete,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (isDelete && comment.image_url) {
+      const path = extractCommentImagePath(comment.image_url);
+      if (path) {
+        const { error: removeError } = await supabase.storage
+          .from("comment-images")
+          .remove([path]);
+        if (removeError) {
+          console.error("comment image remove failed:", removeError.message);
+          // Storage 削除失敗は致命的ではないので続行（DB は NULL 化する）
+        }
+      }
+      updatePayload.image_url = null;
+    }
+
     // 論理削除/復元
     const { error: updateError } = await supabase
       .from("comments")
-      .update({
-        is_deleted: isDelete,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", id);
 
     if (updateError) {

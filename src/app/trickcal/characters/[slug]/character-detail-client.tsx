@@ -8,6 +8,7 @@ import { CharacterCard } from "@/components/trickcal/character/character-card";
 import { StarRatingDisplay } from "@/components/ui/star-rating";
 import { CommentForm } from "@/components/comment/comment-form";
 import { CommentList } from "@/components/comment/comment-list";
+import { CommentImageLightbox } from "@/components/comment/comment-image-lightbox";
 import { cn } from "@/lib/utils";
 import { ROLE_ICON_MAP, POSITION_ICON_MAP, ATTACK_TYPE_ICON_MAP } from "@/lib/trickcal/constants";
 import { useToast, Toast } from "@/components/ui/toast";
@@ -71,6 +72,7 @@ interface CommentItem {
   createdAt: string;
   isLatestVote: boolean;
   isDeleted: boolean;
+  imageUrl: string | null;
 }
 
 const SKILL_LABEL_COLOR = "#2d6bc4";
@@ -118,6 +120,7 @@ interface InitialComments {
     is_deleted: boolean;
     thumbs_up_count: number;
     thumbs_down_count: number;
+    image_url: string | null;
     created_at: string;
     user_reaction: "up" | "down" | null;
   }>;
@@ -149,6 +152,7 @@ export function CharacterDetailClient({
       createdAt: c.created_at,
       isLatestVote: c.is_latest_vote ?? false,
       isDeleted: c.is_deleted,
+      imageUrl: c.image_url ?? null,
     }));
   });
   const [totalCount, setTotalCount] = useState(initialComments?.comments.length ?? 0);
@@ -166,6 +170,7 @@ export function CharacterDetailClient({
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [relicDetailOpen, setRelicDetailOpen] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const relicBtnRef = useRef<HTMLButtonElement>(null);
   const relicPcRef = useRef<HTMLDivElement>(null);
   const relicMobileRef = useRef<HTMLDivElement>(null);
@@ -247,6 +252,7 @@ export function CharacterDetailClient({
             createdAt: c.created_at as string,
             isLatestVote: c.is_latest_vote as boolean,
             isDeleted: c.is_deleted as boolean,
+            imageUrl: (c.image_url as string | null) ?? null,
           })
         );
 
@@ -287,24 +293,29 @@ export function CharacterDetailClient({
   }, [fetchComments]);
 
 
-  // コメント投稿
+  // コメント投稿（multipart/form-data で送信、画像が任意で添付可能）
   const handleSubmit = async (data: {
     displayName: string;
     rating: number | null;
     body: string;
+    image: File | null;
   }) => {
     setSubmitLoading(true);
     try {
+      const formData = new FormData();
+      formData.append("character_id", character.id);
+      formData.append(
+        "comment_type",
+        data.rating !== null ? "vote" : "board"
+      );
+      if (data.rating !== null) formData.append("rating", String(data.rating));
+      formData.append("body", data.body);
+      formData.append("display_name", data.displayName);
+      if (data.image) formData.append("image", data.image);
+
       const res = await fetch("/api/comments", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          character_id: character.id,
-          comment_type: data.rating !== null ? "vote" : "board",
-          rating: data.rating,
-          body: data.body,
-          display_name: data.displayName,
-        }),
+        body: formData,
       });
 
       if (res.ok) {
@@ -321,15 +332,19 @@ export function CharacterDetailClient({
             createdAt: resData.comment.created_at,
             isLatestVote: true,
             isDeleted: false,
+            imageUrl: resData.comment.image_url ?? null,
           };
           setComments((prev) => [newComment, ...prev]);
           setTotalCount((prev) => prev + 1);
         }
         setFormOpen(false);
         showToast("投稿しました！");
+      } else {
+        const err = await res.json().catch(() => null);
+        showToast(err?.error ?? "投稿に失敗しました");
       }
     } catch {
-      // エラー無視
+      showToast("投稿に失敗しました");
     } finally {
       setSubmitLoading(false);
     }
@@ -945,6 +960,7 @@ export function CharacterDetailClient({
         userReactions={userReactions}
         onReact={handleReact}
         onReport={handleReport}
+        onImageClick={setLightboxUrl}
       />
 
       {/* 回遊エリア: 関連キャラ */}
@@ -1038,6 +1054,7 @@ export function CharacterDetailClient({
       </section>
 
       <Toast message={toast.message} visible={toast.visible} />
+      <CommentImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
     </div>
   );
 }
@@ -1057,6 +1074,7 @@ const SortableCharacterCommentList = memo(function SortableCharacterCommentList(
   userReactions,
   onReact,
   onReport,
+  onImageClick,
 }: {
   comments: CommentItem[];
   totalCount: number;
@@ -1065,6 +1083,7 @@ const SortableCharacterCommentList = memo(function SortableCharacterCommentList(
   userReactions: Record<string, ReactionState>;
   onReact: (commentId: string, reaction: ReactionState) => void;
   onReport: (commentId: string) => void;
+  onImageClick: (url: string) => void;
 }) {
   const [sortTab, setSortTab] = useState<SortTab>("newest");
 
@@ -1121,6 +1140,7 @@ const SortableCharacterCommentList = memo(function SortableCharacterCommentList(
         userReactions={userReactions}
         onReact={onReact}
         onReport={onReport}
+        onImageClick={onImageClick}
         accentColor="#22a870"
         hideTab
       />

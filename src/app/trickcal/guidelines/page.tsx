@@ -115,7 +115,7 @@ export default function GuidelinesPage() {
         </div>
         <div className="mt-3 flex items-center justify-between pl-4">
           <p className="text-sm text-text-tertiary">利用規約・免責事項</p>
-          <p className="text-xs text-text-muted">最終更新日：2026/03/01</p>
+          <p className="text-xs text-text-muted">最終更新日：2026/04/26</p>
         </div>
       </div>
 
@@ -143,6 +143,9 @@ export default function GuidelinesPage() {
           <BulletItem>スパム、宣伝、過度な連投、荒らし行為</BulletItem>
           <BulletItem>
             不正アクセス、またはサイトに過度な負荷をかける行為
+          </BulletItem>
+          <BulletItem>
+            画像投稿について：他者の写真や著作物の無断投稿、個人情報・位置情報を含む画像、公序良俗に反する画像（性的・暴力・グロテスク表現等）の投稿。投稿時に自動判定でブロックされる場合があり、運営判断で削除・非表示とすることがあります。
           </BulletItem>
           <BulletItem>その他、運営が不適切と判断する行為</BulletItem>
         </ul>

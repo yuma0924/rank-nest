@@ -153,7 +153,7 @@ export default async function CharacterPage({ params }: Props) {
         .order("sort_order", { ascending: true }),
       supabase
         .from("comments")
-        .select("id, character_id, user_hash, comment_type, rating, body, display_name, is_latest_vote, is_deleted, thumbs_up_count, thumbs_down_count, created_at")
+        .select("id, character_id, user_hash, comment_type, rating, body, display_name, is_latest_vote, is_deleted, thumbs_up_count, thumbs_down_count, image_url, created_at")
         .eq("character_id", character.id)
         .eq("is_deleted", false)
         .order("created_at", { ascending: false })
