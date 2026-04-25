@@ -513,7 +513,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
 
       {/* ナビリンクはサーバーコンポーネント側で表示 */}
 
-      <Toast message={toast.message} visible={toast.visible} />
+      <Toast message={toast.message} visible={toast.visible} type={toast.type} />
     </div>
   );
 }

@@ -1053,7 +1053,7 @@ export function CharacterDetailClient({
         </Link>
       </section>
 
-      <Toast message={toast.message} visible={toast.visible} />
+      <Toast message={toast.message} visible={toast.visible} type={toast.type} />
       <CommentImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
     </div>
   );

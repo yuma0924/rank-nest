@@ -848,7 +848,7 @@ export function BuildDetailClient({
         </div>
       )}
 
-      <Toast message={toast.message} visible={toast.visible} />
+      <Toast message={toast.message} visible={toast.visible} type={toast.type} />
     </div>
   );
 }
