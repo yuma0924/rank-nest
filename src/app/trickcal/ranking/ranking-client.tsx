@@ -42,9 +42,12 @@ export function RankingClient({
     return unrankedCharacters.filter((c) => c.element === elementFilter);
   }, [unrankedCharacters, elementFilter]);
 
-  // 表示する分
-  const visibleRanked = filteredRanked.slice(0, showCount);
-  const remaining = filteredRanked.length - showCount;
+  // モバイル(4列)で行末がスカスカにならないよう4の倍数に切り上げる。
+  // showCount を超える分は md+ で md:hidden にして PC/タブレットの 5/6 列の
+  // ぴったり並びを保つ。
+  const visibleCount = Math.ceil(showCount / 4) * 4;
+  const visibleRanked = filteredRanked.slice(0, visibleCount);
+  const remaining = filteredRanked.length - visibleCount;
 
   // フィルター変更時のリセット（URLパラメータで永続化）
   const handleFilterChange = useCallback((value: string) => {
@@ -167,9 +170,9 @@ export function RankingClient({
                 slug={char.slug}
                 name={char.name}
                 imageUrl={char.imageUrl}
-
                 avgRating={char.avgRating}
                 rank={idx + 1}
+                className={idx >= showCount ? "md:hidden" : undefined}
               />
             ))}
           </div>
