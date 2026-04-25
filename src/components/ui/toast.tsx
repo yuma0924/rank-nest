@@ -35,7 +35,7 @@ export function Toast({ message, visible, type = "success" }: ToastState) {
 
   return (
     <div
-      className={`fixed bottom-24 left-1/2 z-[100] w-[min(380px,calc(100vw-24px))] -translate-x-1/2 rounded-xl bg-[#0a0a0c] px-5 py-3.5 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.08)] ring-1 ring-white/10 transition-all duration-300 ${
+      className={`fixed bottom-24 left-1/2 z-[100] w-[min(420px,calc(100vw_-_24px))] -translate-x-1/2 rounded-xl bg-[#0a0a0c] px-5 py-3.5 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.08)] ring-1 ring-white/10 transition-all duration-300 ${
         visible
           ? "translate-y-0 opacity-100"
           : "translate-y-2 opacity-0 pointer-events-none"
