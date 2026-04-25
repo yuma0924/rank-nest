@@ -35,13 +35,13 @@ export function Toast({ message, visible, type = "success" }: ToastState) {
 
   return (
     <div
-      className={`fixed bottom-24 left-1/2 z-[100] -translate-x-1/2 rounded-xl bg-[#0a0a0c] px-5 py-3.5 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.08)] ring-1 ring-white/10 transition-all duration-300 ${
+      className={`fixed bottom-24 left-1/2 z-[100] w-[min(380px,calc(100vw-24px))] -translate-x-1/2 rounded-xl bg-[#0a0a0c] px-5 py-3.5 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.08)] ring-1 ring-white/10 transition-all duration-300 ${
         visible
           ? "translate-y-0 opacity-100"
           : "translate-y-2 opacity-0 pointer-events-none"
       }`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         {isError ? (
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#ef4444]/20">
             <svg className="h-3.5 w-3.5 text-[#ef4444]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -55,7 +55,7 @@ export function Toast({ message, visible, type = "success" }: ToastState) {
             </svg>
           </span>
         )}
-        <span className="text-sm font-medium tracking-wide text-white">{message}</span>
+        <span className="min-w-0 flex-1 text-sm font-medium leading-relaxed tracking-wide text-white">{message}</span>
       </div>
     </div>
   );
