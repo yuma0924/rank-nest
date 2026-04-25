@@ -20,7 +20,7 @@ interface CommentFormProps {
 
 const MAX_CHARS = 300;
 const MAX_LINES = 8;
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 export function CommentForm({
@@ -90,7 +90,7 @@ export function CommentForm({
       return;
     }
     if (file.size > MAX_IMAGE_SIZE) {
-      setImageError("画像サイズは2MB以下にしてください");
+      setImageError("画像サイズは5MB以下にしてください");
       e.target.value = "";
       return;
     }

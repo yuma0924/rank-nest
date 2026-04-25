@@ -18,7 +18,9 @@ const BOARD_RATE_LIMIT_SECONDS = 10;
 
 // 画像関連
 const COMMENT_IMAGES_BUCKET = "comment-images";
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+// 受付時の上限。サーバー側で sharp により WebP + 1600px リサイズするので、
+// Storage に保存される実体は基本 1MB 以下になる。
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const IMAGE_MAX_DIMENSION = 1600;
 
@@ -215,7 +217,7 @@ export async function POST(request: NextRequest) {
   if (imageFile) {
     if (imageFile.size > MAX_IMAGE_SIZE) {
       return NextResponse.json(
-        { error: "画像サイズは2MB以下にしてください" },
+        { error: "画像サイズは5MB以下にしてください" },
         { status: 400 }
       );
     }
