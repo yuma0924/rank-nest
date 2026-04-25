@@ -66,6 +66,16 @@ export default function RootLayout({
   return (
     <html lang="ja" className={`dark ${zenMaruGothic.variable}`} suppressHydrationWarning>
       <body className={zenMaruGothic.className}>
+        {/* リロード時のスクロール位置を正しく保持する。
+            ブラウザの自動復元は loading.tsx の短い高さに対して走るとズレるので、
+            自前で sessionStorage に保存し、コンテンツ完成後に復元する。
+            ・beforeInteractive で React より前に scrollRestoration='manual' をセット
+            ・load 後に保存済み Y へ複数回スクロール（画像ロード等で高さが伸びるのに追従）
+            ・通常のバック/フォワードには影響しない（reload の場合だけ manual 化）
+        */}
+        <Script id="reload-scroll-fix" strategy="beforeInteractive">
+          {`(function(){try{var n=performance.getEntriesByType('navigation')[0];var isReload=n&&n.type==='reload';var key='rl-y:'+location.pathname+location.search;function save(){try{sessionStorage.setItem(key,String(window.scrollY||window.pageYOffset||0));}catch(e){}}window.addEventListener('scroll',save,{passive:true});window.addEventListener('pagehide',save);if(isReload&&'scrollRestoration' in history){history.scrollRestoration='manual';var saved=parseInt(sessionStorage.getItem(key)||'0',10);if(saved>0){var attempts=0;var tryRestore=function(){window.scrollTo(0,saved);attempts++;if(Math.abs((window.scrollY||0)-saved)>4&&attempts<20){setTimeout(tryRestore,80);}};window.addEventListener('DOMContentLoaded',tryRestore);window.addEventListener('load',tryRestore);}}}catch(e){}})();`}
+        </Script>
         <JsonLd data={websiteSchema} />
         <ThemeProvider>{children}</ThemeProvider>
         {process.env.NODE_ENV === "production" && (
