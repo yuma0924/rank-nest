@@ -33,6 +33,45 @@ export function RewardsClient({ items }: Props) {
     [router, searchParams]
   );
 
+  const renderItemButton = (item: RewardItem) => {
+    const isOpen = openItemId === item.id;
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => setOpen(isOpen ? null : item.id)}
+        title={item.name}
+        aria-label={item.name}
+        className={cn(
+          "group relative aspect-square rounded-md transition-all",
+          isOpen
+            ? "ring-2 ring-star ring-offset-1 ring-offset-bg-primary"
+            : "hover:brightness-110"
+        )}
+      >
+        {item.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            width={96}
+            height={96}
+            loading="lazy"
+            className="h-full w-full rounded-md object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center rounded-md bg-bg-tertiary text-xs text-text-muted">
+            ?
+          </div>
+        )}
+        {/* デスクトップのホバーツールチップ */}
+        <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-bg-input px-2 py-1 text-[11px] text-text-tertiary shadow-lg group-hover:block">
+          {item.name}
+        </span>
+      </button>
+    );
+  };
+
   return (
     <div className="space-y-3 md:space-y-4">
       <div>
@@ -44,49 +83,7 @@ export function RewardsClient({ items }: Props) {
         </p>
       </div>
 
-      {/* コンパクトなアイテムグリッド */}
-      <div className="grid grid-cols-6 gap-1 md:grid-cols-12 md:gap-1.5">
-        {items.map((item) => {
-          const isOpen = openItemId === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setOpen(isOpen ? null : item.id)}
-              title={item.name}
-              aria-label={item.name}
-              className={cn(
-                "group relative aspect-square rounded-md transition-all",
-                isOpen
-                  ? "ring-2 ring-star ring-offset-1 ring-offset-bg-primary"
-                  : "hover:brightness-110"
-              )}
-            >
-              {item.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.imageUrl}
-                  alt={item.name}
-                  width={96}
-                  height={96}
-                  loading="lazy"
-                  className="h-full w-full rounded-md object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center rounded-md bg-bg-tertiary text-xs text-text-muted">
-                  ?
-                </div>
-              )}
-              {/* デスクトップのホバーツールチップ */}
-              <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-bg-input px-2 py-1 text-[11px] text-text-tertiary shadow-lg group-hover:block">
-                {item.name}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 展開パネル */}
+      {/* 展開パネル（グリッドの上） */}
       {openItem && (
         <div className="rounded-[12px] border border-star/40 bg-bg-card-alpha-lighter p-3 md:p-4">
           <div className="mb-2.5 flex items-center gap-2">
@@ -125,7 +122,7 @@ export function RewardsClient({ items }: Props) {
               この報酬を獲得できるキャラはまだ登録されていません
             </p>
           ) : (
-            <div className="grid grid-cols-4 gap-1.5 md:grid-cols-8 md:gap-2">
+            <div className="grid max-h-[220px] grid-cols-5 gap-1.5 overflow-y-auto pl-1.5 pr-1 pt-1.5 md:max-h-none md:grid-cols-8 md:gap-2 md:overflow-visible md:p-0">
               {openItem.characters.map((c) => (
                 <div key={c.id} className="relative">
                   <CharacterCard
@@ -133,7 +130,6 @@ export function RewardsClient({ items }: Props) {
                     name={c.name}
                     imageUrl={c.imageUrl}
                     lazy
-                    className="rounded-[10px]"
                   />
                   {c.isPriority && (
                     <StaticIcon
@@ -141,7 +137,7 @@ export function RewardsClient({ items }: Props) {
                       alt="優先報酬"
                       width={40}
                       height={40}
-                      className="pointer-events-none absolute -left-1.5 -top-1.5 z-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+                      className="pointer-events-none absolute -left-1.5 -top-1.5 z-10 h-7 w-7 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] md:h-10 md:w-10"
                     />
                   )}
                 </div>
@@ -150,6 +146,20 @@ export function RewardsClient({ items }: Props) {
           )}
         </div>
       )}
+
+      {/* アイテムグリッド: モバイルは3行×横スクロール、PCは12列 */}
+      <div className="relative -mx-4 md:mx-0">
+        <div className="overflow-x-auto px-4 pb-2 pt-1.5 md:overflow-visible md:px-0 md:pb-0 md:pt-0">
+          <div className="grid grid-flow-col grid-rows-3 auto-cols-[3.5rem] gap-1.5 md:grid-flow-row md:grid-rows-none md:grid-cols-12 md:auto-cols-auto">
+            {items.map(renderItemButton)}
+          </div>
+        </div>
+        {/* 右端のフェード（横スクロール可能を示唆） */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-bg-primary to-transparent md:hidden"
+        />
+      </div>
 
       {/* 他のページもチェック */}
       <section className="!mt-10 space-y-3">

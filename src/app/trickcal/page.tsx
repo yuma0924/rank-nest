@@ -120,6 +120,58 @@ function SectionHeading({
   );
 }
 
+/* ===== アルバイト報酬から探すバナー ===== */
+function RewardsBanner({
+  imageUrl,
+  className = "",
+  compact = false,
+}: {
+  imageUrl: string | null;
+  className?: string;
+  compact?: boolean;
+}) {
+  return (
+    <Link
+      href="/trickcal/rewards"
+      className={`group items-center rounded-2xl border border-border-primary bg-bg-card transition-colors hover:bg-bg-card-hover ${compact ? "gap-2.5 p-2.5" : "gap-3 p-4"} ${className}`}
+    >
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl}
+          alt=""
+          width={96}
+          height={96}
+          loading="lazy"
+          decoding="async"
+          className={`shrink-0 ${compact ? "h-9 w-9 rounded-[10px]" : "h-12 w-12 rounded-[14px]"}`}
+        />
+      ) : (
+        <span
+          className={`shrink-0 bg-bg-card-hover ${compact ? "h-9 w-9 rounded-[10px]" : "h-12 w-12 rounded-[14px]"}`}
+        />
+      )}
+      <div className="min-w-0 flex-1">
+        <h2 className={`font-bold text-text-primary ${compact ? "text-sm leading-tight" : "text-base"}`}>
+          アルバイト報酬から探す
+        </h2>
+        <p className={`text-text-tertiary ${compact ? "mt-0.5 text-[10px] leading-tight" : "mt-0.5 text-xs"}`}>
+          素材を獲得できるキャラを確認
+        </p>
+      </div>
+      <svg
+        className={`shrink-0 text-text-muted transition-transform group-hover:translate-x-0.5 ${compact ? "h-4 w-4" : "h-5 w-5"}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </Link>
+  );
+}
+
 /* ===== セクション末尾ワイドボタン ===== */
 function SectionFooterButton({
   href,
@@ -469,6 +521,7 @@ export default async function Home() {
   });
 
   const rewardItems = await rewardItemsPromise;
+  const recycledPlastic = rewardItems.find((i) => i.name === "再生プラスチック");
 
   return (
     <div className="space-y-12 md:space-y-16">
@@ -683,7 +736,7 @@ export default async function Home() {
             </div>
 
             {/* 4位以降: グリッド表示 (4列) */}
-            <div className="mt-4 grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+            <div className="mt-6 grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
               {rankedCharacters.slice(3).map((char) => (
                 <CharacterCard
                   key={char.id}
@@ -851,19 +904,33 @@ export default async function Home() {
 
       {/* ====== 第2段: キャラクターを探す ====== */}
       <section className="space-y-4">
-        <SectionHeading
-          icon={
-            <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          }
-          title="キャラクターを探す"
-          subtitle="性格・タイプ・種族などで絞り込み"
-          gradientFrom="#8b5cf6"
-          gradientTo="#a78bfa"
-        />
+        <div className="lg:flex lg:items-start lg:justify-between lg:gap-4">
+          <SectionHeading
+            icon={
+              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            }
+            title="キャラクターを探す"
+            subtitle="性格・タイプ・種族などで絞り込み"
+            gradientFrom="#8b5cf6"
+            gradientTo="#a78bfa"
+          />
+          {/* PC: 見出し右にバナー */}
+          <RewardsBanner
+            imageUrl={recycledPlastic?.image_url ?? null}
+            compact
+            className="hidden lg:flex lg:w-[300px] lg:shrink-0"
+          />
+        </div>
 
         <HomeSearchSection characters={searchCharacters} />
+
+        {/* モバイル: 検索結果の直下にバナー */}
+        <RewardsBanner
+          imageUrl={recycledPlastic?.image_url ?? null}
+          className="flex lg:hidden"
+        />
       </section>
 
       {/* ====== 第3段: 注目キャラクター ====== */}
@@ -996,57 +1063,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ====== アルバイト報酬から探す (モバイルのみ。PCはサイドバーに表示) ====== */}
-      <section className="lg:hidden">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px]"
-              style={{ backgroundImage: "linear-gradient(135deg, #22c55e, #84cc16)" }}
-            >
-              <StaticIcon src="/icons/good.png" alt="" width={22} height={22} />
-            </span>
-            <h2 className="text-lg font-bold text-text-primary">アルバイト報酬から探す</h2>
-          </div>
-          <Link
-            href="/trickcal/rewards"
-            className="text-xs text-text-tertiary transition-colors hover:text-accent"
-          >
-            一覧ページ →
-          </Link>
-        </div>
-        <p className="mt-1 pl-[42px] text-xs text-text-tertiary">
-          素材をタップして、獲得できるキャラを確認
-        </p>
-        <div className="mt-3 grid grid-cols-6 gap-1.5">
-          {rewardItems.map((item) => (
-            <Link
-              key={item.id}
-              href={`/trickcal/rewards?item=${item.id}`}
-              title={item.name}
-              aria-label={item.name}
-              className="group relative aspect-square rounded-md transition-transform hover:scale-105"
-            >
-              {item.image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.image_url}
-                  alt={item.name}
-                  width={96}
-                  height={96}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full rounded-md object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center rounded-md bg-bg-tertiary text-xs text-text-muted">
-                  ?
-                </div>
-              )}
-            </Link>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }

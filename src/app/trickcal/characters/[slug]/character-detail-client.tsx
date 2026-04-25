@@ -706,10 +706,7 @@ export function CharacterDetailClient({
             )}
             {character.partTimeRewards.length > 0 && (
               <div className="flex flex-1 flex-col justify-center rounded-[10px] border border-border-primary bg-bg-card-alpha-light px-2.5 py-2">
-                <p className="text-[10px] text-text-muted">
-                  アルバイト報酬
-                  <span className="ml-1 text-[9px]">タップで同報酬のキャラを表示</span>
-                </p>
+                <p className="text-[10px] text-text-muted">アルバイト報酬</p>
                 <div className="mt-1 flex items-center gap-1">
                   {character.partTimeRewards.map((reward, i) => (
                     <Link
