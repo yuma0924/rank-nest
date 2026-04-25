@@ -2,13 +2,16 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+type ToastType = "success" | "error";
+
 interface ToastState {
   message: string;
   visible: boolean;
+  type?: ToastType;
 }
 
 export function useToast(duration = 3000) {
-  const [toast, setToast] = useState<ToastState>({ message: "", visible: false });
+  const [toast, setToast] = useState<ToastState>({ message: "", visible: false, type: "success" });
 
   useEffect(() => {
     if (!toast.visible) return;
@@ -18,15 +21,17 @@ export function useToast(duration = 3000) {
     return () => clearTimeout(timer);
   }, [toast.visible, duration]);
 
-  const showToast = useCallback((message: string) => {
-    setToast({ message, visible: true });
+  const showToast = useCallback((message: string, type: ToastType = "success") => {
+    setToast({ message, visible: true, type });
   }, []);
 
   return { toast, showToast };
 }
 
-export function Toast({ message, visible }: ToastState) {
+export function Toast({ message, visible, type = "success" }: ToastState) {
   if (!message) return null;
+
+  const isError = type === "error";
 
   return (
     <div
@@ -37,11 +42,19 @@ export function Toast({ message, visible }: ToastState) {
       }`}
     >
       <div className="flex items-center gap-3">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#22a870]/20">
-          <svg className="h-3.5 w-3.5 text-[#22a870]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </span>
+        {isError ? (
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#ef4444]/20">
+            <svg className="h-3.5 w-3.5 text-[#ef4444]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </span>
+        ) : (
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#22a870]/20">
+            <svg className="h-3.5 w-3.5 text-[#22a870]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </span>
+        )}
         <span className="text-sm font-medium tracking-wide text-white">{message}</span>
       </div>
     </div>

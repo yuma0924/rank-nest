@@ -341,10 +341,10 @@ export function CharacterDetailClient({
         showToast("投稿しました！");
       } else {
         const err = await res.json().catch(() => null);
-        showToast(err?.error ?? "投稿に失敗しました");
+        showToast(err?.error ?? "投稿に失敗しました", "error");
       }
     } catch {
-      showToast("投稿に失敗しました");
+      showToast("投稿に失敗しました", "error");
     } finally {
       setSubmitLoading(false);
     }

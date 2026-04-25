@@ -287,7 +287,7 @@ export function TierDetailClient({
       await navigator.clipboard.writeText(shareUrl);
       showToast("URLをコピーしました");
     } catch {
-      showToast("コピーに失敗しました");
+      showToast("コピーに失敗しました", "error");
     }
   };
 
