@@ -49,6 +49,26 @@ export default function Loading() {
             <div key={i} className="aspect-square rounded-[14px] border border-border-primary bg-bg-card" />
           ))}
         </div>
+        <div className="h-16 rounded-2xl border border-border-primary bg-bg-card" />
+      </section>
+
+      {/* 話題のキャラクター */}
+      <section className="space-y-4">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-[14px] bg-bg-card" />
+              <div className="h-5 w-40 rounded bg-bg-card" />
+            </div>
+            <div className="h-4 w-16 rounded bg-bg-card" />
+          </div>
+          <div className="h-4 w-56 rounded bg-bg-card" />
+        </div>
+        <div className="-mx-4 grid grid-cols-2 gap-2 px-2 md:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-44 rounded-[14px] border border-border-primary bg-bg-card" />
+          ))}
+        </div>
       </section>
 
       {/* 人気編成ランキング */}

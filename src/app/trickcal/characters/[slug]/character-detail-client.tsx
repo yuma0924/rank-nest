@@ -183,7 +183,6 @@ export function CharacterDetailClient({
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [relicDetailOpen]);
-  const [itemsOpen, setItemsOpen] = useState(false);
   const { toast, showToast } = useToast();
 
   // user_hash 取得 + 初期コメントに対する自分のリアクションを取得
@@ -670,26 +669,10 @@ export function CharacterDetailClient({
         </div>
       )}
 
-      {/* モバイル版 大好物・アルバイト報酬（折りたたみ） */}
+      {/* モバイル版 大好物・アルバイト報酬 */}
       {(character.favoriteItem || character.partTimeRewards.length > 0) && (
-        <div className="md:hidden border-t border-border-primary pt-3">
-          <button
-            className="flex w-full cursor-pointer items-center justify-between pr-2 py-1 text-xs font-medium text-text-tertiary transition-colors hover:text-text-tertiary"
-            onClick={() => setItemsOpen(!itemsOpen)}
-          >
-            <span className="flex items-center gap-1">
-              <StaticIcon src="/icons/favorite.png" alt="" width={18} height={18} className="shrink-0" />
-              大好物・アルバイト報酬
-            </span>
-            <svg
-              className={`h-3.5 w-3.5 transition-transform ${itemsOpen ? "rotate-180" : ""}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          {itemsOpen && (
-          <div className="mt-2 flex items-stretch gap-2">
+        <div className="md:hidden !mt-2">
+          <div className="flex items-stretch gap-2">
             {character.favoriteItem && (
               <div className="flex flex-1 flex-col justify-center rounded-[10px] border border-border-primary bg-bg-card-alpha-light px-2.5 py-2">
                 <p className="flex items-center gap-1 text-[10px] text-text-muted">
@@ -728,7 +711,6 @@ export function CharacterDetailClient({
               </div>
             )}
           </div>
-          )}
         </div>
       )}
 
