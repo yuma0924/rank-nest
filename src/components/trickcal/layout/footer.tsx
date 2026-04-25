@@ -29,7 +29,7 @@ export function Footer() {
             </span>
           </div>
           <p className="max-w-md text-sm leading-relaxed text-text-tertiary">
-            トリッカル・もちもちほっぺ大作戦の非公式ファンサイトです。みんなの投票とコメントでキャラクターの人気ランキングやおすすめ編成を共有できます。
+            トリッカル・もちもちほっぺ大作戦の非公式ファンサイトです。みんなのキャラへの投票で人気ランキングが決まり、ティア表や編成を共有したり、コメントで語り合えます。
           </p>
           <Link
             href="/trickcal/guidelines"

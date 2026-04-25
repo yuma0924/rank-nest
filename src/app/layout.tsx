@@ -11,10 +11,10 @@ const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: "rank-nest",
-  alternateName: "みんなで決めるゲームランキング",
+  alternateName: "みんなで決めるゲームキャラ・編成ランキング",
   url: "https://rank-nest.com",
   description:
-    "プレイヤーの投票で決まるゲームランキングポータル。複数ゲームのキャラ評価・編成・ティア表を集約。",
+    "みんなの投票で決まる、ゲームキャラ・編成のランキングポータル。複数ゲームのキャラ評価・編成・ティア表を集約。",
   inLanguage: "ja",
   potentialAction: {
     "@type": "SearchAction",
@@ -44,11 +44,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://rank-nest.com"),
   title: {
-    default: "rank-nest - みんなで決めるゲームランキング",
+    default: "rank-nest - みんなで決めるゲームキャラ・編成ランキング",
     template: "%s | rank-nest",
   },
   description:
-    "プレイヤーの投票で決まるゲームランキングポータル。複数ゲームのキャラ評価・編成・ティア表を集約。",
+    "みんなの投票で決まる、ゲームキャラ・編成のランキングポータル。複数ゲームのキャラ評価・編成・ティア表を集約。",
   openGraph: {
     type: "website",
     siteName: "rank-nest",
