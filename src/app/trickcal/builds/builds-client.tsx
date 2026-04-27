@@ -727,8 +727,8 @@ function BuildCard({
           );
         })()}
 
-        {/* コメント */}
-        <div className="mx-0.5 flex flex-col rounded-[10px] bg-bg-inset border border-border-primary px-2.5 py-2 min-h-[76px]">
+        {/* コメント（flex-1 でカードの残り空間を埋めて、高さを左右で揃える） */}
+        <div className="mx-0.5 flex flex-1 flex-col rounded-[10px] bg-bg-inset border border-border-primary px-2.5 py-2 min-h-[76px]">
           <p
             ref={commentRef}
             className="line-clamp-3 whitespace-pre-wrap text-xs md:text-sm text-text-primary leading-relaxed"
