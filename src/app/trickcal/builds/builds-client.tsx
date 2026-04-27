@@ -140,6 +140,19 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
   const abortRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
 
+  // mode ごとのレスポンスキャッシュ（同セッション内で再訪時に即時表示）
+  const buildsCacheRef = useRef<
+    Map<string, { builds: BuildItem[]; hasMore: boolean; nextCursor: string | null }>
+  >(new Map());
+  // 初回 initialBuilds をキャッシュに登録
+  if (initialBuilds && !buildsCacheRef.current.has("general")) {
+    buildsCacheRef.current.set("general", {
+      builds: initialBuilds.builds,
+      hasMore: initialBuilds.hasMore,
+      nextCursor: initialBuilds.nextCursor,
+    });
+  }
+
   const fetchBuilds = useCallback(
     async (cursorId?: string) => {
       abortRef.current?.abort();
@@ -163,9 +176,23 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         if (myId !== requestIdRef.current) return;
 
         if (cursorId) {
-          setBuilds((prev) => [...prev, ...data.builds]);
+          setBuilds((prev) => {
+            const merged = [...prev, ...data.builds];
+            // 追加分を含めてキャッシュも更新
+            buildsCacheRef.current.set(mode, {
+              builds: merged,
+              hasMore: data.has_more,
+              nextCursor: data.next_cursor,
+            });
+            return merged;
+          });
         } else {
           setBuilds(data.builds);
+          buildsCacheRef.current.set(mode, {
+            builds: data.builds,
+            hasMore: data.has_more,
+            nextCursor: data.next_cursor,
+          });
         }
         setNextCursor(data.next_cursor);
         setHasMore(data.has_more);
@@ -182,8 +209,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
   );
 
   // mode 変更時のみ再フェッチ（要素フィルターはクライアント側）。
-  // initialBuilds は親再レンダーで参照が毎回変わるため deps から外す
-  // （初回スキップ判定のためだけに参照する。effect 自体は mode/fetchBuilds で発火）
+  // 訪問済み mode はキャッシュから即時復元してフェッチをスキップ。
   const initialSkip = useRef(!!initialBuilds);
   useEffect(() => {
     if (initialSkip.current && mode === "general") {
@@ -191,11 +217,25 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
       return;
     }
     initialSkip.current = false;
+
+    const cached = buildsCacheRef.current.get(mode);
+    if (cached) {
+      setBuilds(cached.builds);
+      setHasMore(cached.hasMore);
+      setNextCursor(cached.nextCursor);
+      return;
+    }
     setBuilds([]);
     setNextCursor(null);
     setHasMore(false);
     fetchBuilds();
   }, [fetchBuilds, mode]);
+
+  // builds 変更（リアクション・楽観的更新など）をキャッシュに反映
+  useEffect(() => {
+    if (builds.length === 0) return;
+    buildsCacheRef.current.set(mode, { builds, hasMore, nextCursor });
+  }, [builds, hasMore, nextCursor, mode]);
 
   // クライアント側で要素フィルター → ソート
   // 単一性格の編成は element_label 一致で判定。混合編成はメンバーに該当性格が
