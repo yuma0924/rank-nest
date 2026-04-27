@@ -606,10 +606,16 @@ function BuildCard({
   const karmaClass = getKarmaClass(build.likes_count, build.dislikes_count);
 
   const commentLines = build.comment.split("\n");
-  const shouldTruncate = commentLines.length > 3;
-  const displayComment = shouldTruncate && !expanded
-    ? commentLines.slice(0, 3).join("\n")
-    : build.comment;
+  // 明示的改行が3行超 OR 1行が長くて視覚的にクランプされる場合は展開ボタン表示
+  const commentRef = useRef<HTMLParagraphElement | null>(null);
+  const [isClipped, setIsClipped] = useState(false);
+  useEffect(() => {
+    const el = commentRef.current;
+    if (!el) return;
+    setIsClipped(el.scrollHeight > el.clientHeight + 1);
+  }, [build.comment]);
+  const shouldTruncate = commentLines.length > 3 || isClipped;
+  const displayComment = build.comment;
 
   return (
     <div
@@ -724,7 +730,13 @@ function BuildCard({
 
         {/* コメント */}
         <div className="mx-0.5 flex flex-col rounded-[10px] bg-bg-inset border border-border-primary px-2.5 py-2 min-h-[76px]">
-          <p className="whitespace-pre-wrap text-xs md:text-sm text-text-primary leading-relaxed line-clamp-3">
+          <p
+            ref={commentRef}
+            className={cn(
+              "whitespace-pre-wrap text-xs md:text-sm text-text-primary leading-relaxed",
+              !expanded && "line-clamp-3"
+            )}
+          >
             {displayComment}
           </p>
           {shouldTruncate && (
@@ -732,7 +744,7 @@ function BuildCard({
               onClick={(e) => { e.preventDefault(); setExpanded(!expanded); }}
               className="mt-1 flex items-center gap-1 text-[10px] md:text-xs text-text-tertiary hover:text-text-primary cursor-pointer"
             >
-              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className={cn("h-3 w-3 transition-transform", expanded && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
               {expanded ? "閉じる" : "続きを読む"}
