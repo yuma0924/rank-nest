@@ -198,9 +198,18 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
   }, [fetchBuilds, mode]);
 
   // クライアント側で要素フィルター → ソート
+  // 単一性格の編成は element_label 一致で判定。混合編成はメンバーに該当性格が
+  // 含まれていれば一致扱いとする（例: 純粋を選択 → 混合編成のうち純粋メンバーが
+  // 1人でもいるものは表示）。
   const sortedBuilds = useMemo(() => {
     const filtered = elementFilter
-      ? builds.filter((b) => b.element_label === elementFilter)
+      ? builds.filter((b) => {
+          if (b.element_label === elementFilter) return true;
+          if (b.element_label === "混合") {
+            return b.members_detail.some((m) => m.element === elementFilter);
+          }
+          return false;
+        })
       : builds;
     const sorted = [...filtered];
     if (sortKey === "newest") {
@@ -483,6 +492,8 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
       {/* 編成一覧 */}
       {initialLoaded && builds.length === 0 && !loading ? (
         <EmptyState />
+      ) : initialLoaded && sortedBuilds.length === 0 && !loading ? (
+        <FilterEmptyState onClear={() => setElementFilter(null)} />
       ) : (
         <div className="space-y-6 md:grid md:grid-cols-2 md:gap-5 md:space-y-0">
           {sortedBuilds.map((build, idx) => (
@@ -727,6 +738,28 @@ function EmptyState() {
       <p className="mt-1 text-sm text-text-tertiary">
         最初の投稿者になろう！
       </p>
+    </div>
+  );
+}
+
+function FilterEmptyState({ onClear }: { onClear: () => void }) {
+  return (
+    <div className="rounded-2xl border border-border-primary bg-bg-card p-8 text-center">
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-bg-tertiary">
+        <svg className="h-6 w-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+      <p className="font-medium text-text-secondary">該当する編成が見つかりませんでした</p>
+      <p className="mt-1 text-sm text-text-tertiary">
+        フィルターを変更してみてください
+      </p>
+      <button
+        onClick={onClear}
+        className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border-primary bg-bg-input px-4 py-2 text-xs font-bold text-text-secondary transition-colors hover:border-accent/30 hover:text-text-primary cursor-pointer"
+      >
+        フィルターをクリア
+      </button>
     </div>
   );
 }
