@@ -265,9 +265,13 @@ export default async function CharacterPage({ params }: Props) {
     characterDetail.avgRating !== null &&
     characterDetail.validVotesCount >= 4;
 
+  // Product と VideoGameCharacter のマルチタイプで宣言。
+  // VideoGameCharacter はセマンティクス、Product は Review snippet rich result の
+  // 対象 type に含めるため（Google の rich result 対象 type に
+  // VideoGameCharacter は含まれず Product は含まれる）。
   const characterSchema: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "VideoGameCharacter",
+    "@type": ["Product", "VideoGameCharacter"],
     name: character.name,
     url: canonicalUrl,
     image: character.image_url ?? undefined,
