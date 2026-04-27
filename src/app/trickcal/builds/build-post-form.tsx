@@ -70,6 +70,8 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
   const [selectedChar, setSelectedChar] = useState<CharacterInfo | null>(null);
   // 選択中のスロット（＋タップで選択、キャラタップで自動配置）
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
+  // 移動・入れ替えモードの起点スロット
+  const [movingFromSlot, setMovingFromSlot] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [title, setTitle] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -166,6 +168,9 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
 
   // キャラグリッドタップ
   const handleCharacterTap = (char: CharacterInfo) => {
+    // ギャラリー操作開始 → 移動モードはキャンセル
+    if (movingFromSlot !== null) setMovingFromSlot(null);
+
     // 既に配置済み → 配置から除去
     if (placedIds.has(char.id)) {
       setFormation((prev) =>
@@ -209,13 +214,45 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
 
   // スロットタップ
   const handleSlotTap = (slotIndex: number) => {
-    // 既にキャラがいるスロットをタップ → そのキャラを除去
-    if (formation[slotIndex]) {
+    // 移動モード中
+    if (movingFromSlot !== null) {
+      // 同じスロット → キャンセル
+      if (movingFromSlot === slotIndex) {
+        setMovingFromSlot(null);
+        return;
+      }
+      const sourceChar = formation[movingFromSlot];
+      if (!sourceChar) {
+        setMovingFromSlot(null);
+        return;
+      }
+      const targetChar = formation[slotIndex] ?? null;
+      const sourceColumn = getSlotColumn(movingFromSlot, rowCount);
+      const targetColumn = getSlotColumn(slotIndex, rowCount);
+      // ポジション制約: source が target に置けるか
+      if (sourceChar.position && sourceChar.position !== targetColumn) {
+        return;
+      }
+      // 入れ替え時、target キャラが source 列に置けるか
+      if (targetChar && targetChar.position && targetChar.position !== sourceColumn) {
+        return;
+      }
       setFormation((prev) => {
         const next = [...prev];
-        next[slotIndex] = null;
+        next[slotIndex] = sourceChar;
+        next[movingFromSlot] = targetChar;
         return next;
       });
+      setMovingFromSlot(null);
+      return;
+    }
+
+    // 占有スロットタップ → 移動モードに入る
+    if (formation[slotIndex]) {
+      setMovingFromSlot(slotIndex);
+      setSelectedSlot(null);
+      setSelectedChar(null);
+      setPositionFilter("");
       return;
     }
 
@@ -246,6 +283,16 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
         if (!positionFilterManual) setPositionFilter("");
       }
     }
+  };
+
+  // 配置済みキャラを明示的に削除（× ボタン）
+  const handleRemoveSlot = (slotIndex: number) => {
+    setFormation((prev) => {
+      const next = [...prev];
+      next[slotIndex] = null;
+      return next;
+    });
+    if (movingFromSlot === slotIndex) setMovingFromSlot(null);
   };
 
   // キャラがスロットに配置可能か判定
@@ -666,20 +713,42 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
                 const slotIndex = colIdx * rowCount + rowIdx;
                 const char = formation[slotIndex] ?? null;
                 const placeable = canPlaceInSlot(slotIndex);
+                const isMovingSource = movingFromSlot === slotIndex;
+                const canMoveHere = (() => {
+                  if (movingFromSlot === null) return false;
+                  if (slotIndex === movingFromSlot) return false;
+                  const src = formation[movingFromSlot];
+                  if (!src) return false;
+                  const tCol = getSlotColumn(slotIndex, rowCount);
+                  const sCol = getSlotColumn(movingFromSlot, rowCount);
+                  if (src.position && src.position !== tCol) return false;
+                  if (char && char.position && char.position !== sCol) return false;
+                  return true;
+                })();
 
                 return (
-                  <button
+                  <div
                     key={slotIndex}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleSlotTap(slotIndex)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleSlotTap(slotIndex);
+                      }
+                    }}
                     className={cn(
-                      "flex flex-col items-center gap-0.5 py-1.5 transition-all cursor-pointer",
+                      "relative flex flex-col items-center gap-0.5 py-1.5 transition-all cursor-pointer",
                       colIdx < 2 &&
                         "border-r border-border-secondary",
                       selectedSlot === slotIndex && "bg-[rgba(56,189,248,0.15)]",
                       placeable && selectedSlot !== slotIndex && "bg-[rgba(56,189,248,0.08)]",
                       !placeable && isMatchingColumn(slotIndex) && char && "bg-[rgba(56,189,248,0.06)]",
-                      !isMatchingColumn(slotIndex) && selectedChar && "opacity-30"
+                      !isMatchingColumn(slotIndex) && selectedChar && "opacity-30",
+                      isMovingSource && "bg-[rgba(255,99,126,0.18)] ring-2 ring-accent/60 ring-inset",
+                      canMoveHere && "bg-[rgba(34,168,112,0.12)]",
+                      movingFromSlot !== null && !isMovingSource && !canMoveHere && "opacity-30"
                     )}
                   >
                     {char ? (
@@ -690,6 +759,19 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
                           size="md"
                           className="!h-14 !w-14"
                         />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveSlot(slotIndex);
+                          }}
+                          aria-label="このキャラを削除"
+                          className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-bg-card-alpha-heavy border border-border-primary text-text-tertiary transition-colors hover:bg-thumbs-down/80 hover:text-white cursor-pointer"
+                        >
+                          <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
                       </>
                     ) : (
                       <div
@@ -715,7 +797,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
                         </svg>
                       </div>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
