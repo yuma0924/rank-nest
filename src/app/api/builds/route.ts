@@ -153,55 +153,50 @@ export async function GET(request: NextRequest) {
     const items = builds.slice(0, limit);
     const nextCursor = hasMore ? items[items.length - 1]?.id : null;
 
-    // メンバーのキャラ情報を取得
-    const memberIds = [...new Set(items.flatMap((b) => b.members).filter((id): id is string => id !== null))];
-    let characters: Record<string, CharacterInfo> = {};
-
-    if (memberIds.length > 0) {
-      const { data: chars } = await supabase
-        .from("characters")
-        .select("id, name, slug, element, position, image_url, is_hidden")
-        .in("id", memberIds);
-
-      if (chars) {
-        characters = Object.fromEntries(
-          (chars as CharacterInfo[]).map((c) => [c.id, c])
-        );
-      }
-    }
-
-    // ユーザーのリアクション状態を取得
-    const { userHash } = getUserHash(request);
+    const memberIds = [
+      ...new Set(items.flatMap((b) => b.members).filter((id): id is string => id !== null)),
+    ];
     const buildIds = items.map((b) => b.id);
-    let userReactions: Record<string, "up" | "down"> = {};
+    const { userHash } = getUserHash(request);
 
-    if (buildIds.length > 0) {
-      const { data: reactions } = await supabase
-        .from("build_reactions")
-        .select("build_id, reaction_type")
-        .eq("user_hash", userHash)
-        .in("build_id", buildIds);
+    // 後続の3クエリ（characters / reactions / comments）を並列実行
+    const [charsResult, reactionsResult, commentsResult] = await Promise.all([
+      memberIds.length > 0
+        ? supabase
+            .from("characters")
+            .select("id, name, slug, element, position, image_url, is_hidden")
+            .in("id", memberIds)
+        : Promise.resolve({ data: [] as CharacterInfo[] }),
+      buildIds.length > 0
+        ? supabase
+            .from("build_reactions")
+            .select("build_id, reaction_type")
+            .eq("user_hash", userHash)
+            .in("build_id", buildIds)
+        : Promise.resolve({ data: [] as ReactionRow[] }),
+      buildIds.length > 0
+        ? supabase
+            .from("build_comments")
+            .select("build_id")
+            .in("build_id", buildIds)
+            .eq("is_deleted", false)
+        : Promise.resolve({ data: [] as { build_id: string }[] }),
+    ]);
 
-      if (reactions) {
-        userReactions = Object.fromEntries(
-          (reactions as ReactionRow[]).map((r) => [r.build_id, r.reaction_type])
-        );
-      }
-    }
+    const characters: Record<string, CharacterInfo> = charsResult.data
+      ? Object.fromEntries((charsResult.data as CharacterInfo[]).map((c) => [c.id, c]))
+      : {};
 
-    // コメント件数を取得
+    const userReactions: Record<string, "up" | "down"> = reactionsResult.data
+      ? Object.fromEntries(
+          (reactionsResult.data as ReactionRow[]).map((r) => [r.build_id, r.reaction_type])
+        )
+      : {};
+
     const commentCounts: Record<string, number> = {};
-    if (buildIds.length > 0) {
-      const { data: counts } = await supabase
-        .from("build_comments")
-        .select("build_id")
-        .in("build_id", buildIds)
-        .eq("is_deleted", false);
-
-      if (counts) {
-        for (const row of counts) {
-          commentCounts[row.build_id] = (commentCounts[row.build_id] ?? 0) + 1;
-        }
+    if (commentsResult.data) {
+      for (const row of commentsResult.data as { build_id: string }[]) {
+        commentCounts[row.build_id] = (commentCounts[row.build_id] ?? 0) + 1;
       }
     }
 
