@@ -181,7 +181,9 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
     [mode]
   );
 
-  // mode 変更時のみ再フェッチ（要素フィルターはクライアント側）
+  // mode 変更時のみ再フェッチ（要素フィルターはクライアント側）。
+  // initialBuilds は親再レンダーで参照が毎回変わるため deps から外す
+  // （初回スキップ判定のためだけに参照する。effect 自体は mode/fetchBuilds で発火）
   const initialSkip = useRef(!!initialBuilds);
   useEffect(() => {
     if (initialSkip.current && mode === "general") {
@@ -193,7 +195,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
     setNextCursor(null);
     setHasMore(false);
     fetchBuilds();
-  }, [fetchBuilds, initialBuilds, mode]);
+  }, [fetchBuilds, mode]);
 
   // クライアント側で要素フィルター → ソート
   const sortedBuilds = useMemo(() => {
