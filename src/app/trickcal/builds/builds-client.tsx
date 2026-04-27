@@ -656,7 +656,7 @@ function BuildCard({
 
         {/* コメント */}
         <div className="mx-0.5 flex flex-col rounded-[10px] bg-bg-inset border border-border-primary px-2.5 py-2 min-h-[76px]">
-          <p className="whitespace-pre-wrap text-[11px] md:text-xs text-text-primary leading-relaxed line-clamp-3">
+          <p className="whitespace-pre-wrap text-xs md:text-sm text-text-primary leading-relaxed line-clamp-3">
             {displayComment}
           </p>
           {shouldTruncate && (

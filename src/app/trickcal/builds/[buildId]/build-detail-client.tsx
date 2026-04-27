@@ -574,7 +574,7 @@ export function BuildDetailClient({
 
         {/* コメント */}
         <div className="mx-0.5 flex flex-col rounded-[10px] bg-bg-inset border border-border-primary px-2.5 py-2 min-h-[76px]">
-          <p className="whitespace-pre-wrap text-[11px] md:text-xs text-text-primary leading-relaxed">
+          <p className="whitespace-pre-wrap text-sm md:text-base text-text-primary leading-relaxed">
             {build.comment}
           </p>
           <div className="mt-auto pt-1">

@@ -710,7 +710,7 @@ export default async function Home() {
                             注目コメント
                           </p>
                           <div className="rounded-[10px] border border-border-primary bg-bg-inset px-3 py-3 min-h-[72px] flex flex-col lg:min-h-[88px]">
-                            <p className="line-clamp-2 whitespace-pre-wrap text-xs md:text-sm leading-relaxed text-text-primary lg:line-clamp-4">
+                            <p className="line-clamp-2 whitespace-pre-wrap text-sm md:text-base leading-relaxed text-text-primary lg:line-clamp-4">
                               {char.featuredComment}
                             </p>
                             <div className="mt-auto flex items-center justify-between pt-1">
@@ -1014,7 +1014,7 @@ export default async function Home() {
                   {/* コメントブロック */}
                   {char.latestComment && (
                     <div className="mx-2 mb-2 flex flex-1 flex-col rounded-[10px] bg-bg-inset border border-border-secondary px-2.5 py-2 min-h-[76px]">
-                      <p className="line-clamp-2 text-[11px] md:text-xs leading-relaxed text-text-primary">
+                      <p className="line-clamp-2 text-xs md:text-sm leading-relaxed text-text-primary">
                         {char.latestComment}
                       </p>
                       <div className="mt-auto flex items-center justify-between pt-1">

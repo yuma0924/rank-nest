@@ -553,7 +553,7 @@ export function TierDetailClient({
               <span suppressHydrationWarning>{formatDate(tier.created_at)}</span>
             </div>
             {tier.description && (
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+              <p className="mt-2 whitespace-pre-wrap text-sm md:text-base leading-relaxed text-text-secondary">
                 {tier.description}
               </p>
             )}

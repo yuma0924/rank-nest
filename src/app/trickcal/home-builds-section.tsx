@@ -241,7 +241,7 @@ export function HomeBuildsSection({ builds, charMap }: HomeuildsSectionProps) {
                 {/* コメント */}
                 {build.comment && (
                   <div className="mx-0.5 mb-1 flex flex-col rounded-[10px] bg-bg-inset border border-border-secondary px-2.5 py-2 min-h-[76px]">
-                    <p className="line-clamp-2 text-[11px] leading-relaxed text-text-primary">
+                    <p className="line-clamp-2 text-xs md:text-sm leading-relaxed text-text-primary">
                       {build.comment}
                     </p>
                     <div className="mt-auto flex items-center justify-between pt-1">
