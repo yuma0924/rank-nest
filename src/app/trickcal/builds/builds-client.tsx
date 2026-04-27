@@ -310,8 +310,10 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
               setSortKey("newest");
               setFormOpen(false);
               showToast("編成を投稿しました！");
-              // Client Router Cache を無効化して戻ったとき最新が見えるように
+              // Client Router Cache を無効化（戻った時に最新を見せるため）
               router.refresh();
+              // クライアント側の一覧も即時に再取得（投稿直後の反映）
+              fetchBuilds();
               setTimeout(() => {
                 document.getElementById("build-list-top")?.scrollIntoView({ behavior: "smooth" });
               }, 300);
