@@ -154,13 +154,18 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
   }
 
   const fetchBuilds = useCallback(
-    async (cursorId?: string) => {
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
+    async (cursorId?: string, options?: { silent?: boolean }) => {
+      const silent = options?.silent ?? false;
+      // ページネーションでない時のみ abort 適用（追加読み込みは中断しない）
+      if (!cursorId) {
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+      }
+      const controller = abortRef.current!;
       const myId = ++requestIdRef.current;
 
-      setLoading(true);
+      if (!silent) setLoading(true);
       try {
         const params = new URLSearchParams({ mode });
         // 要素フィルターはサーバーに送らない（クライアント側で適用）
@@ -168,17 +173,16 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         if (cursorId) params.set("cursor", cursorId);
 
         const res = await fetch(`/api/builds?${params.toString()}`, {
-          signal: controller.signal,
+          signal: cursorId ? undefined : controller.signal,
         });
         if (!res.ok) throw new Error("Failed to fetch builds");
 
         const data = await res.json();
-        if (myId !== requestIdRef.current) return;
+        if (!cursorId && myId !== requestIdRef.current) return;
 
         if (cursorId) {
           setBuilds((prev) => {
             const merged = [...prev, ...data.builds];
-            // 追加分を含めてキャッシュも更新
             buildsCacheRef.current.set(mode, {
               builds: merged,
               hasMore: data.has_more,
@@ -199,21 +203,25 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
       } finally {
-        if (myId === requestIdRef.current) {
+        if (!silent && (cursorId || myId === requestIdRef.current)) {
           setLoading(false);
           setInitialLoaded(true);
         }
+        if (silent) setInitialLoaded(true);
       }
     },
     [mode]
   );
 
   // mode 変更時のみ再フェッチ（要素フィルターはクライアント側）。
-  // 訪問済み mode はキャッシュから即時復元してフェッチをスキップ。
+  // 訪問済み mode はキャッシュから即時復元しつつ、裏で SWR 的に再取得して
+  // 最新の投稿・リアクション数を反映する。
   const initialSkip = useRef(!!initialBuilds);
   useEffect(() => {
     if (initialSkip.current && mode === "general") {
       initialSkip.current = false;
+      // 初回 SSR データは ISR(60秒) で最大1分古い可能性。裏で軽く再取得
+      fetchBuilds(undefined, { silent: true });
       return;
     }
     initialSkip.current = false;
@@ -223,6 +231,8 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
       setBuilds(cached.builds);
       setHasMore(cached.hasMore);
       setNextCursor(cached.nextCursor);
+      // バックグラウンドで最新データを取得（スピナー無し）
+      fetchBuilds(undefined, { silent: true });
       return;
     }
     setBuilds([]);
