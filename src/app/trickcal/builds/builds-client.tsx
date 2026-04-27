@@ -138,8 +138,18 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
   const [formOpen, setFormOpen] = useState(false);
   const { toast, showToast } = useToast();
 
+  // 連打時のレース条件防止: 進行中のリクエストを中止 + stale チェック
+  const abortRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+
   const fetchBuilds = useCallback(
     async (cursorId?: string) => {
+      // 古い in-flight を中止
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const myId = ++requestIdRef.current;
+
       setLoading(true);
       try {
         const params = new URLSearchParams({ mode });
@@ -147,10 +157,15 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         params.set("sort", "popular");
         if (cursorId) params.set("cursor", cursorId);
 
-        const res = await fetch(`/api/builds?${params.toString()}`);
+        const res = await fetch(`/api/builds?${params.toString()}`, {
+          signal: controller.signal,
+        });
         if (!res.ok) throw new Error("Failed to fetch builds");
 
         const data = await res.json();
+        // 自分が最新リクエストでなければ破棄
+        if (myId !== requestIdRef.current) return;
+
         if (cursorId) {
           setBuilds((prev) => [...prev, ...data.builds]);
         } else {
@@ -158,11 +173,14 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         }
         setNextCursor(data.next_cursor);
         setHasMore(data.has_more);
-      } catch {
-        // エラー時は空のまま
+      } catch (e) {
+        if ((e as Error).name === "AbortError") return;
+        // その他エラーは空のまま
       } finally {
-        setLoading(false);
-        setInitialLoaded(true);
+        if (myId === requestIdRef.current) {
+          setLoading(false);
+          setInitialLoaded(true);
+        }
       }
     },
     [mode, elementFilters]
@@ -507,8 +525,12 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
       )}
 
       {loading && builds.length === 0 && (
-        <div className="flex justify-center py-8">
-          <p className="text-sm text-text-secondary">読み込み中...</p>
+        <div className="flex items-center justify-center gap-2 py-12 text-text-secondary">
+          <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          <p className="text-sm">読み込み中...</p>
         </div>
       )}
 
