@@ -176,6 +176,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
       return;
     }
     initialSkip.current = false;
+    setBuilds([]); // 古いフィルター結果が一瞬見えるのを防ぐ
     setNextCursor(null);
     setHasMore(false);
     fetchBuilds();
@@ -505,7 +506,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         </div>
       )}
 
-      {loading && !initialLoaded && (
+      {loading && builds.length === 0 && (
         <div className="flex justify-center py-8">
           <p className="text-sm text-text-secondary">読み込み中...</p>
         </div>
