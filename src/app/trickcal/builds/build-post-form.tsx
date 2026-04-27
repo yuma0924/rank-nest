@@ -123,10 +123,17 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
     loadCharacters();
   }, [charsLoaded]);
 
-  // モード変更時にformationリセット
+  // モード変更時、編成サイズを切り替えつつ既存の選択は可能な限り保持する
   useEffect(() => {
     const size = getPartySize(formMode);
-    setFormation(Array(size).fill(null));
+    setFormation((prev) => {
+      if (prev.length === size) return prev;
+      const next: (CharacterInfo | null)[] = Array(size).fill(null);
+      for (let i = 0; i < Math.min(prev.length, size); i++) {
+        next[i] = prev[i];
+      }
+      return next;
+    });
     setSelectedChar(null);
     setSelectedSlot(null);
     setPositionFilter("");
