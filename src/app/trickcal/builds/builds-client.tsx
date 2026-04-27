@@ -735,7 +735,7 @@ function BuildCard({
           >
             {build.comment}
           </p>
-          <div className="mt-1 flex items-center justify-between gap-2">
+          <div className="mt-2 flex items-center justify-between gap-2">
             <span className="min-w-0 truncate text-[10px] md:text-xs text-text-muted">
               {build.display_name ? `— ${build.display_name}` : " "}
             </span>
