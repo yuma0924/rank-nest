@@ -727,25 +727,25 @@ function BuildCard({
           );
         })()}
 
-        {/* コメント（flex-1 でカードの残り空間を埋めて、高さを左右で揃える） */}
-        <div className="mx-0.5 flex flex-1 flex-col rounded-[10px] bg-bg-inset border border-border-primary px-2.5 py-2 min-h-[76px]">
+        {/* コメント（高さは 3行＋名前で固定。「続きを読む」は名前行の右端） */}
+        <div className="mx-0.5 flex flex-col rounded-[10px] bg-bg-inset border border-border-primary px-2.5 py-2">
           <p
             ref={commentRef}
-            className="line-clamp-3 whitespace-pre-wrap text-xs md:text-sm text-text-primary leading-relaxed"
+            className="line-clamp-3 min-h-[3lh] whitespace-pre-wrap text-xs md:text-sm text-text-primary leading-relaxed"
           >
             {build.comment}
           </p>
-          {shouldTruncate && (
-            <span className="mt-1 inline-flex items-center gap-0.5 text-[10px] md:text-xs text-accent-secondary">
-              続きを読む
-              <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <span className="min-w-0 truncate text-[10px] md:text-xs text-text-muted">
+              {build.display_name ? `— ${build.display_name}` : " "}
             </span>
-          )}
-          <div className="mt-auto pt-1">
-            {build.display_name && (
-              <span className="text-[10px] md:text-xs text-text-muted">— {build.display_name}</span>
+            {shouldTruncate && (
+              <span className="shrink-0 inline-flex items-center gap-0.5 text-[10px] md:text-xs text-accent-secondary">
+                続きを読む
+                <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
             )}
           </div>
         </div>
