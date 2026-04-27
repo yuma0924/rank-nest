@@ -96,10 +96,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
 
   // URLパラメータからフィルター状態を復元
   const mode = (searchParams.get("mode") as BuildMode) || "general";
-  const elementFilters = useMemo(() => {
-    const param = searchParams.get("elements");
-    return param ? new Set(param.split(",")) : new Set<string>();
-  }, [searchParams]);
+  const elementFilter = searchParams.get("element"); // 単一選択。null なら全て
   const sortKey = (searchParams.get("sort") as SortKey) || "popular";
 
   const updateParams = useCallback((updates: Record<string, string | null>) => {
@@ -111,6 +108,8 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         params.set(key, value);
       }
     }
+    // 古いキー(elements 複数選択)は完全に除去
+    params.delete("elements");
     // デフォルト値は削除
     if (params.get("mode") === "general") params.delete("mode");
     if (params.get("sort") === "popular") params.delete("sort");
@@ -119,13 +118,12 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
   }, [searchParams, router]);
 
   const setMode = useCallback((newMode: BuildMode) => {
-    updateParams({ mode: newMode, elements: null });
+    updateParams({ mode: newMode, element: null });
   }, [updateParams]);
 
-  const setElementFilters = useCallback((updater: Set<string> | ((prev: Set<string>) => Set<string>)) => {
-    const next = typeof updater === "function" ? updater(elementFilters) : updater;
-    updateParams({ elements: next.size > 0 ? [...next].join(",") : null });
-  }, [updateParams, elementFilters]);
+  const setElementFilter = useCallback((next: string | null) => {
+    updateParams({ element: next });
+  }, [updateParams]);
 
   const setSortKey = useCallback((newSort: SortKey) => {
     updateParams({ sort: newSort });
@@ -138,13 +136,12 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
   const [formOpen, setFormOpen] = useState(false);
   const { toast, showToast } = useToast();
 
-  // 連打時のレース条件防止: 進行中のリクエストを中止 + stale チェック
+  // mode 変更時にだけサーバーフェッチ。要素フィルターはクライアント側で即時適用
   const abortRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
 
   const fetchBuilds = useCallback(
     async (cursorId?: string) => {
-      // 古い in-flight を中止
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -153,7 +150,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
       setLoading(true);
       try {
         const params = new URLSearchParams({ mode });
-        if (elementFilters.size > 0) params.set("element", [...elementFilters].join(","));
+        // 要素フィルターはサーバーに送らない（クライアント側で適用）
         params.set("sort", "popular");
         if (cursorId) params.set("cursor", cursorId);
 
@@ -163,7 +160,6 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         if (!res.ok) throw new Error("Failed to fetch builds");
 
         const data = await res.json();
-        // 自分が最新リクエストでなければ破棄
         if (myId !== requestIdRef.current) return;
 
         if (cursorId) {
@@ -175,7 +171,6 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         setHasMore(data.has_more);
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
-        // その他エラーは空のまま
       } finally {
         if (myId === requestIdRef.current) {
           setLoading(false);
@@ -183,26 +178,29 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         }
       }
     },
-    [mode, elementFilters]
+    [mode]
   );
 
-  // mode や element filter 変更時にリセット + 再取得
+  // mode 変更時のみ再フェッチ（要素フィルターはクライアント側）
   const initialSkip = useRef(!!initialBuilds);
   useEffect(() => {
-    if (initialSkip.current && mode === "general" && elementFilters.size === 0) {
+    if (initialSkip.current && mode === "general") {
       initialSkip.current = false;
       return;
     }
     initialSkip.current = false;
-    setBuilds([]); // 古いフィルター結果が一瞬見えるのを防ぐ
+    setBuilds([]);
     setNextCursor(null);
     setHasMore(false);
     fetchBuilds();
-  }, [fetchBuilds, initialBuilds, mode, elementFilters]);
+  }, [fetchBuilds, initialBuilds, mode]);
 
-  // クライアント側ソート
+  // クライアント側で要素フィルター → ソート
   const sortedBuilds = useMemo(() => {
-    const sorted = [...builds];
+    const filtered = elementFilter
+      ? builds.filter((b) => b.element_label === elementFilter)
+      : builds;
+    const sorted = [...filtered];
     if (sortKey === "newest") {
       sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else {
@@ -214,7 +212,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
       });
     }
     return sorted;
-  }, [builds, sortKey]);
+  }, [builds, sortKey, elementFilter]);
 
   const handleLoadMore = () => {
     if (nextCursor && !loading) {
@@ -325,35 +323,25 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
       <div id="build-list-top" className="flex items-center justify-between gap-2 md:hidden">
         <div className="flex gap-1.5 overflow-x-auto">
           <button
-            onClick={() => setElementFilters(new Set())}
+            onClick={() => setElementFilter(null)}
             className={cn(
               "shrink-0 rounded-[10px] px-2.5 py-1.5 text-[11px] font-bold transition-colors cursor-pointer",
-              elementFilters.size === 0
+              elementFilter === null
                 ? "bg-[rgba(255,99,126,0.15)] text-text-primary shadow-[0px_4px_6px_0px_rgba(0,0,0,0.1)]"
                 : "bg-bg-input text-text-tertiary"
             )}
             style={{
-              border: `1.2px solid ${elementFilters.size === 0 ? "rgba(255,99,126,0.4)" : "var(--border-primary)"}`,
+              border: `1.2px solid ${elementFilter === null ? "rgba(255,99,126,0.4)" : "var(--border-primary)"}`,
             }}
           >
             全て
           </button>
           {ELEMENTS.map((elem) => {
-            const active = elementFilters.has(elem);
+            const active = elementFilter === elem;
             return (
               <button
                 key={elem}
-                onClick={() => {
-                  setElementFilters((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(elem)) {
-                      next.delete(elem);
-                    } else {
-                      next.add(elem);
-                    }
-                    return next;
-                  });
-                }}
+                onClick={() => setElementFilter(active ? null : elem)}
                 className={cn(
                   "flex shrink-0 items-center justify-center rounded-[10px] p-1.5 transition-colors cursor-pointer",
                   active
@@ -416,32 +404,25 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         </div>
         <div className="flex gap-1.5">
           <button
-            onClick={() => setElementFilters(new Set())}
+            onClick={() => setElementFilter(null)}
             className={cn(
               "shrink-0 rounded-[10px] px-2.5 py-1.5 text-xs font-bold transition-colors cursor-pointer",
-              elementFilters.size === 0
+              elementFilter === null
                 ? "bg-[rgba(255,99,126,0.15)] text-text-primary shadow-[0px_4px_6px_0px_rgba(0,0,0,0.1)]"
                 : "bg-bg-input text-text-tertiary"
             )}
             style={{
-              border: `1.2px solid ${elementFilters.size === 0 ? "rgba(255,99,126,0.4)" : "var(--border-primary)"}`,
+              border: `1.2px solid ${elementFilter === null ? "rgba(255,99,126,0.4)" : "var(--border-primary)"}`,
             }}
           >
             全て
           </button>
           {ELEMENTS.map((elem) => {
-            const active = elementFilters.has(elem);
+            const active = elementFilter === elem;
             return (
               <button
                 key={elem}
-                onClick={() => {
-                  setElementFilters((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(elem)) next.delete(elem);
-                    else next.add(elem);
-                    return next;
-                  });
-                }}
+                onClick={() => setElementFilter(active ? null : elem)}
                 className={cn(
                   "flex shrink-0 items-center justify-center rounded-[10px] p-1.5 transition-colors cursor-pointer",
                   active
