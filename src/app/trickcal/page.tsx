@@ -630,9 +630,9 @@ export default async function Home() {
 
                     <div className="lg:flex">
                       {/* キャラ情報 */}
-                      <div className="flex gap-3 px-3.5 py-2.5 lg:flex-1 lg:min-w-0 lg:py-4 lg:px-4 lg:gap-4">
+                      <div className="flex gap-3 px-3.5 py-3 lg:flex-1 lg:min-w-0 lg:py-4 lg:px-4 lg:gap-4">
                         {/* キャラ画像 */}
-                        <div className="h-20 w-20 shrink-0 overflow-hidden lg:h-24 lg:w-24">
+                        <div className="h-24 w-24 shrink-0 overflow-hidden lg:h-28 lg:w-28">
                           {char.imageUrl ? (
                             <Image
                               src={char.imageUrl}
@@ -654,7 +654,7 @@ export default async function Home() {
                         {/* 名前・ロール・評価 */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <p className="truncate text-base font-bold text-text-primary lg:text-lg">
+                            <p className="truncate text-lg font-bold text-text-primary lg:text-xl">
                               {char.name}
                             </p>
                             {char.element && ELEMENT_ICON_MAP[char.element] && (
@@ -709,8 +709,8 @@ export default async function Home() {
                             </svg>
                             注目コメント
                           </p>
-                          <div className="rounded-[10px] border border-border-primary bg-bg-inset px-3 py-3 min-h-[72px] flex flex-col lg:min-h-[88px]">
-                            <p className="line-clamp-2 whitespace-pre-wrap text-sm md:text-base leading-relaxed text-text-primary lg:line-clamp-4">
+                          <div className="rounded-[10px] border border-border-primary bg-bg-inset px-3 py-3 min-h-[88px] flex flex-col">
+                            <p className="line-clamp-2 whitespace-pre-wrap text-sm md:text-base leading-relaxed text-text-primary">
                               {char.featuredComment}
                             </p>
                             <div className="mt-auto flex items-center justify-between pt-1">
