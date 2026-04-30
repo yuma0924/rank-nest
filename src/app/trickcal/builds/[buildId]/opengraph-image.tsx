@@ -3,62 +3,60 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
 import type { BuildMode } from "@/lib/trickcal/constants";
 
+export const runtime = "nodejs";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "人気編成ランキング | みんなで決めるトリッカルランキング";
 
-function toAbsoluteUrl(url: string | null): string | null {
-  if (!url) return null;
-  if (url.startsWith("http")) return url;
-  return `https://rank-nest.com${url}`;
-}
-
 export default async function Image({ params }: { params: Promise<{ buildId: string }> }) {
   const { buildId } = await params;
-  const supabase = createAdminClient();
 
-  const { data: build } = await supabase
-    .from("builds")
-    .select("title, display_name, mode, element_label, members")
-    .eq("id", buildId)
-    .eq("is_deleted", false)
-    .maybeSingle();
-
-  if (!build) {
-    return new ImageResponse(
+  // 失敗してもデフォルトサイズの簡素な OG を返してエラーを防ぐ
+  const fallback = (text: string) =>
+    new ImageResponse(
       (
         <div
           style={{
             width: "100%",
             height: "100%",
-            background: "#0f1523",
+            background: "linear-gradient(135deg, #0f1523 0%, #1a2236 100%)",
             color: "white",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontSize: 48,
+            fontFamily: "sans-serif",
           }}
         >
-          編成が見つかりません
+          {text}
         </div>
       ),
       { ...size }
     );
+
+  type BuildRow = {
+    title: string | null;
+    display_name: string | null;
+    mode: string;
+    element_label: string | null;
+    members: (string | null)[];
+  };
+  let build: BuildRow | null = null;
+  try {
+    const supabase = createAdminClient();
+    const res = await supabase
+      .from("builds")
+      .select("title, display_name, mode, element_label, members")
+      .eq("id", buildId)
+      .eq("is_deleted", false)
+      .maybeSingle();
+    build = (res.data as BuildRow | null) ?? null;
+  } catch (e) {
+    console.error("OG build fetch error:", e);
+    return fallback("人気編成ランキング");
   }
 
-  const memberIds = ((build.members as (string | null)[]) ?? []).filter(
-    (id): id is string => !!id
-  );
-  const { data: chars } = memberIds.length > 0
-    ? await supabase
-        .from("characters")
-        .select("id, image_url")
-        .in("id", memberIds)
-    : { data: [] };
-
-  const charMap = new Map<string, string | null>(
-    (chars ?? []).map((c) => [c.id, c.image_url])
-  );
+  if (!build) return fallback("編成が見つかりません");
 
   const modeLabel = BUILD_MODE_LABEL_MAP[build.mode as BuildMode] ?? build.mode;
   const buildTitle =
@@ -133,7 +131,7 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
           </div>
         )}
 
-        {/* メンバー横並び */}
+        {/* メンバープレースホルダー（画像フェッチを外して切り分け） */}
         <div
           style={{
             display: "flex",
@@ -143,37 +141,21 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
             justifyContent: "center",
           }}
         >
-          {memberIds.slice(0, 9).map((cid, i) => {
-            const url = toAbsoluteUrl(charMap.get(cid) ?? null);
-            if (!url) {
-              return (
-                <div
-                  key={i}
-                  style={{
-                    width: 120,
-                    height: 120,
-                    background: "#1a2236",
-                    borderRadius: 16,
-                  }}
-                />
-              );
-            }
-            return (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+          {((build.members as (string | null)[]) ?? [])
+            .filter((id): id is string => !!id)
+            .slice(0, 9)
+            .map((_, i) => (
+              <div
                 key={i}
-                src={url}
-                alt=""
-                width={120}
-                height={120}
                 style={{
+                  width: 120,
+                  height: 120,
+                  background: "rgba(255,255,255,0.08)",
+                  border: "3px solid rgba(255,255,255,0.15)",
                   borderRadius: 16,
-                  objectFit: "cover",
-                  border: "3px solid rgba(255,255,255,0.1)",
                 }}
               />
-            );
-          })}
+            ))}
         </div>
 
         {/* フッター */}
