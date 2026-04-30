@@ -16,13 +16,15 @@ async function loadLogoDataUrl(): Promise<string | null> {
   }
 }
 
-// Zen Maru Gothic（サイトと同じフォント）を Google Fonts から取得
-async function loadFont(weight: 400 | 700): Promise<ArrayBuffer | null> {
+// Zen Maru Gothic を Google Fonts から取得。
+// text= パラメータで実際に使う文字だけを含む subset を取得して
+// 単一の woff2 として返す（Japanese subset を確実に含めるため）。
+async function loadFont(text: string, weight: 400 | 700): Promise<ArrayBuffer | null> {
   try {
-    const css = await fetch(
-      `https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@${weight}&display=swap`,
-      { headers: { "User-Agent": "Mozilla/5.0" } }
-    ).then((r) => r.text());
+    const url = `https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@${weight}&text=${encodeURIComponent(text)}`;
+    const css = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+    }).then((r) => r.text());
     const match = css.match(/src:\s*url\(([^)]+\.woff2)\)/);
     if (!match) return null;
     const buf = await fetch(match[1]).then((r) => r.arrayBuffer());
@@ -33,10 +35,16 @@ async function loadFont(weight: 400 | 700): Promise<ArrayBuffer | null> {
 }
 
 export default async function Image() {
+  // OG に表示する全テキストを集約（Google Fonts text= 用）
+  const textAll =
+    "みんなで決める！トリッカルランキング" +
+    "みんなのキャラへの投票で人気ランキングが決まり、ティア表や編成を共有したり、コメントで語り合えます。" +
+    "rank-nest.com/trickcal";
+
   const [logo, font400, font700] = await Promise.all([
     loadLogoDataUrl(),
-    loadFont(400),
-    loadFont(700),
+    loadFont(textAll, 400),
+    loadFont(textAll, 700),
   ]);
 
   const fonts = [
@@ -87,7 +95,6 @@ export default async function Image() {
               width={180}
               height={180}
               style={{
-                borderRadius: 32,
                 flexShrink: 0,
               }}
             />
@@ -117,20 +124,26 @@ export default async function Image() {
           </div>
         </div>
 
-        {/* 説明文（フッター文を流用） */}
+        {/* 説明文（フッター文を流用、明示的に2行に分ける） */}
         <div
           style={{
             display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
             fontSize: 24,
             fontWeight: 400,
             color: "#cbd5e1",
             marginTop: 50,
             textAlign: "center",
-            maxWidth: 1040,
-            lineHeight: 1.6,
+            lineHeight: 1.5,
           }}
         >
-          みんなのキャラへの投票で人気ランキングが決まり、ティア表や編成を共有したり、コメントで語り合えます。
+          <div style={{ display: "flex" }}>
+            みんなのキャラへの投票で人気ランキングが決まり、
+          </div>
+          <div style={{ display: "flex" }}>
+            ティア表や編成を共有したり、コメントで語り合えます。
+          </div>
         </div>
 
         {/* URL */}
