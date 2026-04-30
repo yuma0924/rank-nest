@@ -139,7 +139,7 @@ export default async function Image() {
           }}
         >
           <div style={{ display: "flex" }}>
-            みんなのキャラへの投票で人気ランキングが決まり、
+            みんなのキャラへの投票で人気ランキングが決まり
           </div>
           <div style={{ display: "flex" }}>
             ティア表や編成を共有したり、コメントで語り合えます。
