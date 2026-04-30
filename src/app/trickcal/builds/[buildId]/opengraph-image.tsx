@@ -42,7 +42,11 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
     members: (string | null)[];
   };
   let build: BuildRow | null = null;
+  let debugInfo = "";
   try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+    debugInfo = `URL:${url.slice(0, 30)}... KEY:${key ? "set" : "NULL"}`;
     const supabase = createAdminClient();
     const res = await supabase
       .from("builds")
@@ -50,13 +54,14 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
       .eq("id", buildId)
       .eq("is_deleted", false)
       .maybeSingle();
+    if (res.error) debugInfo += ` ERR:${res.error.message}`;
     build = (res.data as BuildRow | null) ?? null;
   } catch (e) {
-    console.error("OG build fetch error:", e);
-    return fallback("人気編成ランキング");
+    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    return fallback(`ERR ${msg.slice(0, 80)}`);
   }
 
-  if (!build) return fallback("編成が見つかりません");
+  if (!build) return fallback(`編成なし ${debugInfo.slice(0, 60)}`);
 
   const modeLabel = BUILD_MODE_LABEL_MAP[build.mode as BuildMode] ?? build.mode;
   const buildTitle =
