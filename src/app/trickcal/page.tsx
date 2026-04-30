@@ -25,6 +25,7 @@ export const metadata: Metadata = {
     description:
       "トリッカルの全キャラ評価・人気編成・ティア表を、みんなの投票で共有できる非公式ファンサイト。",
     url: "https://rank-nest.com/trickcal",
+    images: [{ url: "/og-default.png", width: 1200, height: 630 }],
   },
 };
 
