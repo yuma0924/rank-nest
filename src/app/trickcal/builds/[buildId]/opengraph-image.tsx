@@ -1,6 +1,4 @@
 import { ImageResponse } from "next/og";
-import { readFile } from "fs/promises";
-import path from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
 import type { BuildMode } from "@/lib/trickcal/constants";
@@ -10,15 +8,19 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "人気編成ランキング | みんなで決めるトリッカルランキング";
 
-// /characters/xxx.webp を public ディレクトリから読み出して base64 data URL に。
-// Vercel 関数から自身のドメインへの HTTP fetch は制約があるためファイル直読みする。
-async function readPublicAsDataUrl(relPath: string): Promise<string | null> {
-  if (!relPath.startsWith("/")) return null;
+// 画像 URL を fetch して base64 data URL 化する。
+// next/og の <img src> で外部 URL を指定すると Vercel 環境で読み込めないことが
+// あるため、明示的に Buffer を取得して data URL に変換する。
+async function fetchAsDataUrl(url: string): Promise<string | null> {
   try {
-    const buf = await readFile(path.join(process.cwd(), "public", relPath));
-    const ext = path.extname(relPath).slice(1).toLowerCase();
-    const mime = ext === "webp" ? "image/webp" : ext === "png" ? "image/png" : "image/jpeg";
-    return `data:${mime};base64,${buf.toString("base64")}`;
+    const res = await fetch(url, {
+      headers: { Accept: "image/*" },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    const ct = res.headers.get("content-type") || "image/webp";
+    return `data:${ct};base64,${buf.toString("base64")}`;
   } catch {
     return null;
   }
@@ -87,16 +89,14 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
   const buildTitle = build.title || `${build.element_label ?? ""}${modeLabel}`;
   const memberIds = (build.members ?? []).filter((id): id is string => !!id);
 
-  // 各メンバーの画像 src を解決:
-  //  - 相対パス (/characters/...) → fs から base64 化
-  //  - 絶対URL (http...) → そのまま (Supabase Storage 等)
-  //  - 解決不能 → null（プレースホルダー表示）
+  // 各メンバー画像を fetch して data URL 化（並列）。
+  // 相対パスは rank-nest.com に補完。
   const memberSrcs = await Promise.all(
     memberIds.slice(0, 9).map(async (cid) => {
       const raw = charMap.get(cid) ?? null;
       if (!raw) return null;
-      if (raw.startsWith("http")) return raw;
-      return await readPublicAsDataUrl(raw);
+      const absUrl = raw.startsWith("http") ? raw : `https://rank-nest.com${raw}`;
+      return await fetchAsDataUrl(absUrl);
     })
   );
 
