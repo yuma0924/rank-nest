@@ -709,7 +709,7 @@ export default async function Home() {
                             </svg>
                             注目コメント
                           </p>
-                          <div className="rounded-[10px] border border-border-primary bg-bg-inset px-3 py-3 min-h-[88px] flex flex-col">
+                          <div className="rounded-[10px] border border-border-primary bg-bg-inset px-3 py-3 min-h-[96px] md:min-h-[104px] flex flex-col">
                             <p className="line-clamp-2 whitespace-pre-wrap text-sm md:text-base leading-relaxed text-text-primary">
                               {char.featuredComment}
                             </p>
