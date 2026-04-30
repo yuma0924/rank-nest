@@ -16,8 +16,43 @@ async function loadLogoDataUrl(): Promise<string | null> {
   }
 }
 
+// Zen Maru Gothic（サイトと同じフォント）を Google Fonts から取得
+async function loadFont(weight: 400 | 700): Promise<ArrayBuffer | null> {
+  try {
+    const css = await fetch(
+      `https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@${weight}&display=swap`,
+      { headers: { "User-Agent": "Mozilla/5.0" } }
+    ).then((r) => r.text());
+    const match = css.match(/src:\s*url\(([^)]+\.woff2)\)/);
+    if (!match) return null;
+    const buf = await fetch(match[1]).then((r) => r.arrayBuffer());
+    return buf;
+  } catch {
+    return null;
+  }
+}
+
 export default async function Image() {
-  const logo = await loadLogoDataUrl();
+  const [logo, font400, font700] = await Promise.all([
+    loadLogoDataUrl(),
+    loadFont(400),
+    loadFont(700),
+  ]);
+
+  const fonts = [
+    font400 && {
+      name: "ZenMaruGothic",
+      data: font400,
+      weight: 400 as const,
+      style: "normal" as const,
+    },
+    font700 && {
+      name: "ZenMaruGothic",
+      data: font700,
+      weight: 700 as const,
+      style: "normal" as const,
+    },
+  ].filter((f): f is NonNullable<typeof f> => !!f);
 
   return new ImageResponse(
     (
@@ -29,50 +64,19 @@ export default async function Image() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: "#0a0e1a",
+          background: "#0f1523",
           color: "white",
-          fontFamily: "sans-serif",
+          fontFamily: "ZenMaruGothic",
           position: "relative",
-          overflow: "hidden",
-          padding: "48px 60px",
+          padding: "60px 80px",
         }}
       >
-        {/* 装飾円: 右上ピンク */}
-        <div
-          style={{
-            position: "absolute",
-            top: -250,
-            right: -250,
-            width: 600,
-            height: 600,
-            borderRadius: 300,
-            background: "rgba(224,90,168,0.30)",
-            filter: "blur(110px)",
-            display: "flex",
-          }}
-        />
-        {/* 装飾円: 左下ブルー */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: -250,
-            left: -250,
-            width: 600,
-            height: 600,
-            borderRadius: 300,
-            background: "rgba(56,189,248,0.18)",
-            filter: "blur(110px)",
-            display: "flex",
-          }}
-        />
-
         {/* メインロゴ + タイトル */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 36,
-            zIndex: 1,
           }}
         >
           {logo && (
@@ -80,22 +84,21 @@ export default async function Image() {
             <img
               src={logo}
               alt=""
-              width={200}
-              height={200}
+              width={180}
+              height={180}
               style={{
-                borderRadius: 36,
+                borderRadius: 32,
                 flexShrink: 0,
               }}
             />
           )}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <div
               style={{
                 display: "flex",
-                fontSize: 36,
+                fontSize: 32,
                 fontWeight: 700,
                 color: "#e05aa8",
-                letterSpacing: 1,
               }}
             >
               みんなで決める！
@@ -103,11 +106,10 @@ export default async function Image() {
             <div
               style={{
                 display: "flex",
-                fontSize: 84,
-                fontWeight: 900,
+                fontSize: 76,
+                fontWeight: 700,
                 color: "white",
                 lineHeight: 1.05,
-                letterSpacing: -1,
               }}
             >
               トリッカルランキング
@@ -115,23 +117,23 @@ export default async function Image() {
           </div>
         </div>
 
-        {/* 説明 */}
+        {/* 説明文（フッター文を流用） */}
         <div
           style={{
             display: "flex",
-            fontSize: 26,
+            fontSize: 24,
+            fontWeight: 400,
             color: "#cbd5e1",
-            marginTop: 56,
+            marginTop: 50,
             textAlign: "center",
-            maxWidth: 980,
-            lineHeight: 1.5,
-            zIndex: 1,
+            maxWidth: 1040,
+            lineHeight: 1.6,
           }}
         >
-          全キャラ評価・人気編成・みんなのティア表を、投票で共有できる非公式ファンサイト
+          みんなのキャラへの投票で人気ランキングが決まり、ティア表や編成を共有したり、コメントで語り合えます。
         </div>
 
-        {/* URL バー */}
+        {/* URL */}
         <div
           style={{
             position: "absolute",
@@ -140,15 +142,15 @@ export default async function Image() {
             right: 0,
             display: "flex",
             justifyContent: "center",
-            fontSize: 22,
+            fontSize: 20,
             color: "#64748b",
-            fontWeight: 600,
+            fontWeight: 400,
           }}
         >
           rank-nest.com/trickcal
         </div>
       </div>
     ),
-    { ...size }
+    { ...size, fonts: fonts.length > 0 ? fonts : undefined }
   );
 }
