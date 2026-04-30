@@ -14,106 +14,139 @@ export default async function Image() {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#0f1523",
+          background: "#0a0e1a",
           color: "white",
-          padding: "60px 80px",
           fontFamily: "sans-serif",
           position: "relative",
+          overflow: "hidden",
         }}
       >
-        {/* バッジ */}
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            marginBottom: 32,
-          }}
-        >
-          {[
-            { label: "純粋", color: "#22c55e" },
-            { label: "冷静", color: "#3b82f6" },
-            { label: "狂気", color: "#ef4444" },
-            { label: "活発", color: "#eab308" },
-            { label: "憂鬱", color: "#a855f7" },
-          ].map((e) => (
-            <div
-              key={e.label}
-              style={{
-                background: e.color,
-                color: "white",
-                fontSize: 20,
-                fontWeight: 700,
-                padding: "8px 20px",
-                borderRadius: 999,
-                display: "flex",
-              }}
-            >
-              {e.label}
-            </div>
-          ))}
-        </div>
-
-        {/* メインタイトル */}
-        <div
-          style={{
-            display: "flex",
-            fontSize: 28,
-            color: "#e05aa8",
-            fontWeight: 700,
-            letterSpacing: 4,
-            marginBottom: 8,
-          }}
-        >
-          みんなで決める
-        </div>
-        <div
-          style={{
-            display: "flex",
-            fontSize: 80,
-            fontWeight: 900,
-            lineHeight: 1.1,
-            marginBottom: 24,
-            background: "linear-gradient(90deg, #e05aa8, #f08a9a)",
-            backgroundClip: "text",
-            color: "transparent",
-          }}
-        >
-          トリッカルランキング
-        </div>
-
-        {/* タグライン */}
-        <div
-          style={{
-            display: "flex",
-            fontSize: 24,
-            color: "#cbd5e1",
-            textAlign: "center",
-            maxWidth: 900,
-          }}
-        >
-          人気キャラ・編成・ティア表をみんなの投票で
-        </div>
-
-        {/* フッター */}
+        {/* 装飾円: 右上ピンク */}
         <div
           style={{
             position: "absolute",
-            bottom: 40,
+            top: -200,
+            right: -200,
+            width: 500,
+            height: 500,
+            borderRadius: 250,
+            background: "rgba(224,90,168,0.25)",
+            filter: "blur(100px)",
+            display: "flex",
+          }}
+        />
+        {/* 装飾円: 左下ブルー */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: -200,
+            left: -200,
+            width: 500,
+            height: 500,
+            borderRadius: 250,
+            background: "rgba(56,189,248,0.18)",
+            filter: "blur(100px)",
+            display: "flex",
+          }}
+        />
+
+        {/* 中央コンテンツ */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+            padding: "80px 60px",
+            position: "relative",
+          }}
+        >
+          {/* タグ */}
+          <div
+            style={{
+              display: "flex",
+              fontSize: 22,
+              color: "#e05aa8",
+              fontWeight: 700,
+              letterSpacing: 8,
+              marginBottom: 24,
+            }}
+          >
+            TRICKCAL FAN SITE
+          </div>
+
+          {/* メインタイトル */}
+          <div
+            style={{
+              display: "flex",
+              fontSize: 110,
+              fontWeight: 900,
+              lineHeight: 1,
+              background: "linear-gradient(90deg, #e05aa8 0%, #f08a9a 50%, #ffb85e 100%)",
+              backgroundClip: "text",
+              color: "transparent",
+              letterSpacing: -2,
+            }}
+          >
+            rank-nest
+          </div>
+
+          {/* サブタイトル */}
+          <div
+            style={{
+              display: "flex",
+              fontSize: 36,
+              fontWeight: 800,
+              marginTop: 24,
+              color: "white",
+            }}
+          >
+            みんなで決めるトリッカルランキング
+          </div>
+
+          {/* ディバイダー */}
+          <div
+            style={{
+              display: "flex",
+              width: 80,
+              height: 4,
+              background: "linear-gradient(90deg, #e05aa8, #f08a9a)",
+              borderRadius: 2,
+              marginTop: 32,
+            }}
+          />
+
+          {/* タグライン */}
+          <div
+            style={{
+              display: "flex",
+              fontSize: 26,
+              color: "#94a3b8",
+              marginTop: 28,
+              fontWeight: 500,
+            }}
+          >
+            キャラ評価・人気編成・ティア表をみんなの投票で
+          </div>
+        </div>
+
+        {/* 下部 URL バー */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 32,
             left: 0,
             right: 0,
             display: "flex",
             justifyContent: "center",
             fontSize: 22,
             color: "#64748b",
+            fontWeight: 600,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ color: "#e05aa8", fontWeight: 700 }}>rank</span>
-            <span>-</span>
-            <span style={{ color: "white" }}>nest.com/trickcal</span>
-          </div>
+          rank-nest.com/trickcal
         </div>
       </div>
     ),

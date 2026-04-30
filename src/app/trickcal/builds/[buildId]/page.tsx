@@ -99,6 +99,7 @@ export async function generateMetadata({
     openGraph: {
       title: metaTitle,
       description: metaDescription,
+      images: [{ url: "/og-default.png", width: 1200, height: 630 }],
     },
   };
 }
