@@ -11,10 +11,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // OG 画像生成 function に logo.png を同梱（fs.readFile で読み込むため）
-  outputFileTracingIncludes: {
-    "/trickcal/opengraph-image": ["./public/logo.png"],
-  },
   experimental: {
     staleTimes: {
       dynamic: 30,
