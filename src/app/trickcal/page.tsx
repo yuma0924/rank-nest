@@ -702,7 +702,7 @@ export default async function Home() {
 
                       {/* 注目コメント */}
                       {char.featuredComment && (
-                        <div className="mx-2.5 mb-2.5 lg:mb-0 lg:flex-1 lg:min-w-0 lg:self-start lg:pt-2.5">
+                        <div className="mx-3 mb-3 lg:mb-3 lg:mr-3 lg:flex-1 lg:min-w-0 lg:self-start lg:pt-3">
                           <p className="mb-1 flex items-center gap-1 px-0.5 text-[10px] md:text-xs font-bold text-[#38bdf8]">
                             <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z" />
