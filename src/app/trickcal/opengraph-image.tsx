@@ -23,9 +23,12 @@ async function loadFont(text: string, weight: 400 | 700): Promise<ArrayBuffer | 
   try {
     const url = `https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@${weight}&text=${encodeURIComponent(text)}`;
     const css = await fetch(url, {
+      // Google Fonts は UA で format を切り替える。Chrome を装って woff2 を取る
+      // ことも可能だが、subset 配信は truetype が返るのでフォーマット非依存に
+      // url() 全体をそのまま掴む。
       headers: { "User-Agent": "Mozilla/5.0" },
     }).then((r) => r.text());
-    const match = css.match(/src:\s*url\(([^)]+\.woff2)\)/);
+    const match = css.match(/src:\s*url\(([^)]+)\)/);
     if (!match) return null;
     const buf = await fetch(match[1]).then((r) => r.arrayBuffer());
     return buf;
