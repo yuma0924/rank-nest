@@ -41,6 +41,7 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
     members: (string | null)[];
   };
   let build: BuildRow | null = null;
+  let charMap = new Map<string, string | null>();
   try {
     const supabase = createAdminClient();
     const res = await supabase
@@ -50,6 +51,18 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
       .eq("is_deleted", false)
       .maybeSingle();
     build = (res.data as BuildRow | null) ?? null;
+    if (build) {
+      const memberIds = (build.members ?? []).filter((id): id is string => !!id);
+      if (memberIds.length > 0) {
+        const charRes = await supabase
+          .from("characters")
+          .select("id, image_url")
+          .in("id", memberIds);
+        charMap = new Map(
+          (charRes.data ?? []).map((c) => [c.id, c.image_url])
+        );
+      }
+    }
   } catch {
     return fallback("人気編成ランキング");
   }
@@ -58,7 +71,13 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
 
   const modeLabel = BUILD_MODE_LABEL_MAP[build.mode as BuildMode] ?? build.mode;
   const buildTitle = build.title || `${build.element_label ?? ""}${modeLabel}`;
-  const memberCount = (build.members ?? []).filter((m) => !!m).length;
+  const memberIds = (build.members ?? []).filter((id): id is string => !!id);
+
+  const toAbsoluteUrl = (url: string | null): string | null => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+    return `https://rank-nest.com${url}`;
+  };
 
   return new ImageResponse(
     (
@@ -127,7 +146,7 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
           </div>
         )}
 
-        {/* メンバー数のプレースホルダー */}
+        {/* メンバー横並び（キャラ画像） */}
         <div
           style={{
             display: "flex",
@@ -137,18 +156,38 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
             justifyContent: "center",
           }}
         >
-          {Array.from({ length: Math.min(memberCount, 9) }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: 120,
-                height: 120,
-                background: "rgba(255,255,255,0.08)",
-                border: "3px solid rgba(255,255,255,0.15)",
-                borderRadius: 16,
-              }}
-            />
-          ))}
+          {memberIds.slice(0, 9).map((cid, i) => {
+            const url = toAbsoluteUrl(charMap.get(cid) ?? null);
+            if (!url) {
+              return (
+                <div
+                  key={i}
+                  style={{
+                    width: 120,
+                    height: 120,
+                    background: "rgba(255,255,255,0.08)",
+                    border: "3px solid rgba(255,255,255,0.15)",
+                    borderRadius: 16,
+                  }}
+                />
+              );
+            }
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={i}
+                src={url}
+                alt=""
+                width={120}
+                height={120}
+                style={{
+                  borderRadius: 16,
+                  objectFit: "cover",
+                  border: "3px solid rgba(255,255,255,0.1)",
+                }}
+              />
+            );
+          })}
         </div>
 
         {/* フッター */}
