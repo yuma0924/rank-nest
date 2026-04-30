@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "fs/promises";
+import path from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
 import type { BuildMode } from "@/lib/trickcal/constants";
@@ -7,6 +9,20 @@ export const runtime = "nodejs";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "人気編成ランキング | みんなで決めるトリッカルランキング";
+
+// /characters/xxx.webp を public ディレクトリから読み出して base64 data URL に。
+// Vercel 関数から自身のドメインへの HTTP fetch は制約があるためファイル直読みする。
+async function readPublicAsDataUrl(relPath: string): Promise<string | null> {
+  if (!relPath.startsWith("/")) return null;
+  try {
+    const buf = await readFile(path.join(process.cwd(), "public", relPath));
+    const ext = path.extname(relPath).slice(1).toLowerCase();
+    const mime = ext === "webp" ? "image/webp" : ext === "png" ? "image/png" : "image/jpeg";
+    return `data:${mime};base64,${buf.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
 
 export default async function Image({ params }: { params: Promise<{ buildId: string }> }) {
   const { buildId } = await params;
@@ -42,7 +58,6 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
   };
   let build: BuildRow | null = null;
   let charMap = new Map<string, string | null>();
-  let debugChar = "";
   try {
     const supabase = createAdminClient();
     const res = await supabase
@@ -59,14 +74,11 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
           .from("characters")
           .select("id, image_url")
           .in("id", memberIds);
-        const rows = charRes.data ?? [];
-        charMap = new Map(rows.map((c) => [c.id, c.image_url]));
-        debugChar = `members:${memberIds.length} rows:${rows.length} err:${charRes.error?.message ?? "none"} sample:${rows[0]?.image_url ?? "null"}`;
+        charMap = new Map((charRes.data ?? []).map((c) => [c.id, c.image_url]));
       }
     }
-  } catch (e) {
-    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
-    return fallback(`ERR ${msg.slice(0, 60)}`);
+  } catch {
+    return fallback("人気編成ランキング");
   }
 
   if (!build) return fallback("編成が見つかりません");
@@ -75,11 +87,18 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
   const buildTitle = build.title || `${build.element_label ?? ""}${modeLabel}`;
   const memberIds = (build.members ?? []).filter((id): id is string => !!id);
 
-  const toAbsoluteUrl = (url: string | null): string | null => {
-    if (!url) return null;
-    if (url.startsWith("http")) return url;
-    return `https://rank-nest.com${url}`;
-  };
+  // 各メンバーの画像 src を解決:
+  //  - 相対パス (/characters/...) → fs から base64 化
+  //  - 絶対URL (http...) → そのまま (Supabase Storage 等)
+  //  - 解決不能 → null（プレースホルダー表示）
+  const memberSrcs = await Promise.all(
+    memberIds.slice(0, 9).map(async (cid) => {
+      const raw = charMap.get(cid) ?? null;
+      if (!raw) return null;
+      if (raw.startsWith("http")) return raw;
+      return await readPublicAsDataUrl(raw);
+    })
+  );
 
   return new ImageResponse(
     (
@@ -158,9 +177,8 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
             justifyContent: "center",
           }}
         >
-          {memberIds.slice(0, 9).map((cid, i) => {
-            const url = toAbsoluteUrl(charMap.get(cid) ?? null);
-            if (!url) {
+          {memberSrcs.map((src, i) => {
+            if (!src) {
               return (
                 <div
                   key={i}
@@ -178,7 +196,7 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={i}
-                src={url}
+                src={src}
                 alt=""
                 width={120}
                 height={120}
@@ -207,7 +225,7 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
             <span>-</span>
             <span style={{ color: "white" }}>nest.com/trickcal</span>
           </div>
-          <div style={{ display: "flex", fontSize: 14 }}>{debugChar.slice(0, 100)}</div>
+          <div>人気編成ランキング</div>
         </div>
       </div>
     ),
