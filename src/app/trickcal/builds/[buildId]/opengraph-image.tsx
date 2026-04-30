@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "fs/promises";
+import path from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
 import type { BuildMode } from "@/lib/trickcal/constants";
@@ -7,6 +9,31 @@ export const runtime = "nodejs";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "人気編成ランキング | みんなで決めるトリッカルランキング";
+
+// 画像を data URL 化する。
+// 相対パス(/characters/...) は fs.readFile で /public から読む（next.config.ts の
+// outputFileTracingIncludes で function に同梱される）。
+// 絶対 URL (http) は fetch で取得（Supabase Storage 等の外部 CDN）。
+async function loadImageAsDataUrl(raw: string | null): Promise<string | null> {
+  if (!raw) return null;
+  try {
+    let buf: Buffer;
+    let ct = "image/webp";
+    if (raw.startsWith("http")) {
+      const res = await fetch(raw);
+      if (!res.ok) return null;
+      buf = Buffer.from(await res.arrayBuffer());
+      ct = res.headers.get("content-type") || "image/webp";
+    } else {
+      buf = await readFile(path.join(process.cwd(), "public", raw));
+      const ext = path.extname(raw).slice(1).toLowerCase();
+      ct = ext === "png" ? "image/png" : ext === "jpg" || ext === "jpeg" ? "image/jpeg" : "image/webp";
+    }
+    return `data:${ct};base64,${buf.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
 
 export default async function Image({ params }: { params: Promise<{ buildId: string }> }) {
   const { buildId } = await params;
@@ -41,6 +68,7 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
     members: (string | null)[];
   };
   let build: BuildRow | null = null;
+  let charMap = new Map<string, string | null>();
   try {
     const supabase = createAdminClient();
     const res = await supabase
@@ -50,6 +78,16 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
       .eq("is_deleted", false)
       .maybeSingle();
     build = (res.data as BuildRow | null) ?? null;
+    if (build) {
+      const memberIds = (build.members ?? []).filter((id): id is string => !!id);
+      if (memberIds.length > 0) {
+        const charRes = await supabase
+          .from("characters")
+          .select("id, image_url")
+          .in("id", memberIds);
+        charMap = new Map((charRes.data ?? []).map((c) => [c.id, c.image_url]));
+      }
+    }
   } catch {
     return fallback("人気編成ランキング");
   }
@@ -58,7 +96,12 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
 
   const modeLabel = BUILD_MODE_LABEL_MAP[build.mode as BuildMode] ?? build.mode;
   const buildTitle = build.title || `${build.element_label ?? ""}${modeLabel}`;
-  const memberCount = (build.members ?? []).filter((m): m is string => !!m).length;
+  const memberIds = (build.members ?? []).filter((id): id is string => !!id);
+
+  // 画像を並列で base64 化
+  const memberSrcs = await Promise.all(
+    memberIds.slice(0, 9).map((cid) => loadImageAsDataUrl(charMap.get(cid) ?? null))
+  );
 
   return new ImageResponse(
     (
@@ -74,7 +117,6 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
           fontFamily: "sans-serif",
         }}
       >
-        {/* ヘッダー: モード + 属性 バッジ */}
         <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
           <div
             style={{
@@ -108,7 +150,6 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
           )}
         </div>
 
-        {/* タイトル */}
         <div
           style={{
             fontSize: 56,
@@ -127,7 +168,6 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
           </div>
         )}
 
-        {/* メンバー横並び（キャラ画像） */}
         <div
           style={{
             display: "flex",
@@ -137,21 +177,39 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
             justifyContent: "center",
           }}
         >
-          {Array.from({ length: Math.min(memberCount, 9) }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: 120,
-                height: 120,
-                background: "rgba(255,255,255,0.08)",
-                border: "3px solid rgba(255,255,255,0.15)",
-                borderRadius: 16,
-              }}
-            />
-          ))}
+          {memberSrcs.map((src, i) => {
+            if (!src) {
+              return (
+                <div
+                  key={i}
+                  style={{
+                    width: 120,
+                    height: 120,
+                    background: "rgba(255,255,255,0.08)",
+                    border: "3px solid rgba(255,255,255,0.15)",
+                    borderRadius: 16,
+                  }}
+                />
+              );
+            }
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={i}
+                src={src}
+                alt=""
+                width={120}
+                height={120}
+                style={{
+                  borderRadius: 16,
+                  objectFit: "cover",
+                  border: "3px solid rgba(255,255,255,0.1)",
+                }}
+              />
+            );
+          })}
         </div>
 
-        {/* フッター */}
         <div
           style={{
             display: "flex",
