@@ -8,24 +8,6 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "人気編成ランキング | みんなで決めるトリッカルランキング";
 
-// 画像 URL を fetch して base64 data URL 化する。
-// next/og の <img src> で外部 URL を指定すると Vercel 環境で読み込めないことが
-// あるため、明示的に Buffer を取得して data URL に変換する。
-async function fetchAsDataUrl(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url, {
-      headers: { Accept: "image/*" },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const buf = Buffer.from(await res.arrayBuffer());
-    const ct = res.headers.get("content-type") || "image/webp";
-    return `data:${ct};base64,${buf.toString("base64")}`;
-  } catch {
-    return null;
-  }
-}
-
 export default async function Image({ params }: { params: Promise<{ buildId: string }> }) {
   const { buildId } = await params;
 
@@ -59,7 +41,6 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
     members: (string | null)[];
   };
   let build: BuildRow | null = null;
-  let charMap = new Map<string, string | null>();
   try {
     const supabase = createAdminClient();
     const res = await supabase
@@ -69,16 +50,6 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
       .eq("is_deleted", false)
       .maybeSingle();
     build = (res.data as BuildRow | null) ?? null;
-    if (build) {
-      const memberIds = (build.members ?? []).filter((id): id is string => !!id);
-      if (memberIds.length > 0) {
-        const charRes = await supabase
-          .from("characters")
-          .select("id, image_url")
-          .in("id", memberIds);
-        charMap = new Map((charRes.data ?? []).map((c) => [c.id, c.image_url]));
-      }
-    }
   } catch {
     return fallback("人気編成ランキング");
   }
@@ -87,18 +58,7 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
 
   const modeLabel = BUILD_MODE_LABEL_MAP[build.mode as BuildMode] ?? build.mode;
   const buildTitle = build.title || `${build.element_label ?? ""}${modeLabel}`;
-  const memberIds = (build.members ?? []).filter((id): id is string => !!id);
-
-  // 各メンバー画像を fetch して data URL 化（並列）。
-  // 相対パスは rank-nest.com に補完。
-  const memberSrcs = await Promise.all(
-    memberIds.slice(0, 9).map(async (cid) => {
-      const raw = charMap.get(cid) ?? null;
-      if (!raw) return null;
-      const absUrl = raw.startsWith("http") ? raw : `https://rank-nest.com${raw}`;
-      return await fetchAsDataUrl(absUrl);
-    })
-  );
+  const memberCount = (build.members ?? []).filter((m): m is string => !!m).length;
 
   return new ImageResponse(
     (
@@ -177,37 +137,18 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
             justifyContent: "center",
           }}
         >
-          {memberSrcs.map((src, i) => {
-            if (!src) {
-              return (
-                <div
-                  key={i}
-                  style={{
-                    width: 120,
-                    height: 120,
-                    background: "rgba(255,255,255,0.08)",
-                    border: "3px solid rgba(255,255,255,0.15)",
-                    borderRadius: 16,
-                  }}
-                />
-              );
-            }
-            return (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={i}
-                src={src}
-                alt=""
-                width={120}
-                height={120}
-                style={{
-                  borderRadius: 16,
-                  objectFit: "cover",
-                  border: "3px solid rgba(255,255,255,0.1)",
-                }}
-              />
-            );
-          })}
+          {Array.from({ length: Math.min(memberCount, 9) }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: 120,
+                height: 120,
+                background: "rgba(255,255,255,0.08)",
+                border: "3px solid rgba(255,255,255,0.15)",
+                borderRadius: 16,
+              }}
+            />
+          ))}
         </div>
 
         {/* フッター */}
