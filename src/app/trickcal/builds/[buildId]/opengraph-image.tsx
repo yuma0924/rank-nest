@@ -42,6 +42,7 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
   };
   let build: BuildRow | null = null;
   let charMap = new Map<string, string | null>();
+  let debugChar = "";
   try {
     const supabase = createAdminClient();
     const res = await supabase
@@ -58,13 +59,14 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
           .from("characters")
           .select("id, image_url")
           .in("id", memberIds);
-        charMap = new Map(
-          (charRes.data ?? []).map((c) => [c.id, c.image_url])
-        );
+        const rows = charRes.data ?? [];
+        charMap = new Map(rows.map((c) => [c.id, c.image_url]));
+        debugChar = `members:${memberIds.length} rows:${rows.length} err:${charRes.error?.message ?? "none"} sample:${rows[0]?.image_url ?? "null"}`;
       }
     }
-  } catch {
-    return fallback("人気編成ランキング");
+  } catch (e) {
+    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    return fallback(`ERR ${msg.slice(0, 60)}`);
   }
 
   if (!build) return fallback("編成が見つかりません");
@@ -205,7 +207,7 @@ export default async function Image({ params }: { params: Promise<{ buildId: str
             <span>-</span>
             <span style={{ color: "white" }}>nest.com/trickcal</span>
           </div>
-          <div>人気編成ランキング</div>
+          <div style={{ display: "flex", fontSize: 14 }}>{debugChar.slice(0, 100)}</div>
         </div>
       </div>
     ),
