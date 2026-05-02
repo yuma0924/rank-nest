@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { CharacterIcon } from "@/components/trickcal/character/character-icon";
 import { ThumbsUpDown } from "@/components/reaction/thumbs-up-down";
 import { cn } from "@/lib/utils";
-import { ELEMENT_ICONS, BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
-import type { BuildMode } from "@/lib/trickcal/constants";
+import { ELEMENT_ICONS, BUILD_MODE_LABEL_MAP, ALIAS_STAGE_LABELS } from "@/lib/trickcal/constants";
+import type { BuildMode, AliasStage } from "@/lib/trickcal/constants";
 import { useToast, Toast } from "@/components/ui/toast";
 
 type CharacterInfo = {
@@ -27,6 +27,7 @@ type CharacterInfo = {
 type BuildDetail = {
   id: string;
   mode: BuildMode;
+  alias_stage: AliasStage | null;
   party_size: number;
   element_label: string | null;
   title: string | null;
@@ -43,6 +44,7 @@ type BuildDetail = {
 type SimilarBuild = {
   id: string;
   mode: BuildMode;
+  alias_stage: AliasStage | null;
   title: string | null;
   display_name: string | null;
   comment: string;
@@ -51,6 +53,14 @@ type SimilarBuild = {
   members_detail: CharacterInfo[];
   updated_at: string;
 };
+
+function buildModeLabel(mode: BuildMode, aliasStage: AliasStage | null): string {
+  const base = BUILD_MODE_LABEL_MAP[mode];
+  if (mode === "alias" && aliasStage) {
+    return `${base}・${ALIAS_STAGE_LABELS[aliasStage]}`;
+  }
+  return base;
+}
 
 type CommentItem = {
   id: string;
@@ -220,7 +230,7 @@ export function BuildDetailClient({
   }, [shareMenuOpen]);
 
   const shareUrl = `https://rank-nest.com/trickcal/builds/${initialBuild.id}`;
-  const shareText = `「${initialBuild.title || BUILD_MODE_LABEL_MAP[initialBuild.mode]}」の編成をチェック！`;
+  const shareText = `「${initialBuild.title || buildModeLabel(initialBuild.mode, initialBuild.alias_stage)}」の編成をチェック！`;
 
   const handleShareX = () => {
     setShareMenuOpen(false);
@@ -533,7 +543,7 @@ export function BuildDetailClient({
         {/* タイトル + 属性アイコン + モード + 通報 */}
         <div className="mb-3 flex items-center justify-between gap-2">
           <h1 className="min-w-0 truncate text-sm font-bold text-text-primary">
-            {build.title || BUILD_MODE_LABEL_MAP[build.mode]}
+            {build.title || buildModeLabel(build.mode, build.alias_stage)}
           </h1>
           <div className="flex shrink-0 items-center gap-1.5">
             {build.members_detail
@@ -552,7 +562,7 @@ export function BuildDetailClient({
                 ) : null
               ))}
             <span className="rounded-md bg-bg-card-alpha-light px-2 py-0.5 text-[10px] font-bold text-text-muted">
-              {BUILD_MODE_LABEL_MAP[build.mode]}
+              {buildModeLabel(build.mode, build.alias_stage)}
             </span>
             <button
               onClick={() => setReportTarget({ type: "build", id: build.id })}
@@ -778,7 +788,7 @@ export function BuildDetailClient({
                 {/* タイトル + 性格アイコン + モード */}
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <span className="min-w-0 truncate text-sm font-bold text-text-primary">
-                    {sb.title || BUILD_MODE_LABEL_MAP[sb.mode]}
+                    {sb.title || buildModeLabel(sb.mode, sb.alias_stage)}
                   </span>
                   <div className="flex shrink-0 items-center gap-1.5">
                     {sb.members_detail
@@ -797,7 +807,7 @@ export function BuildDetailClient({
                         ) : null
                       ))}
                     <span className="rounded-md bg-bg-card-alpha-light px-2 py-0.5 text-[10px] font-bold text-text-muted">
-                      {BUILD_MODE_LABEL_MAP[sb.mode]}
+                      {buildModeLabel(sb.mode, sb.alias_stage)}
                     </span>
                   </div>
                 </div>

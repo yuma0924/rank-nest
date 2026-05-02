@@ -8,8 +8,16 @@ import { Button } from "@/components/ui/button";
 import { CharacterIcon } from "@/components/trickcal/character/character-icon";
 import { ThumbsUpDown } from "@/components/reaction/thumbs-up-down";
 import { cn } from "@/lib/utils";
-import { ELEMENTS, ELEMENT_ICONS, BUILD_MODE_OPTIONS, BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
-import type { BuildMode } from "@/lib/trickcal/constants";
+import {
+  ELEMENTS,
+  ELEMENT_ICONS,
+  BUILD_MODE_OPTIONS,
+  BUILD_MODE_LABEL_MAP,
+  ALIAS_STAGES,
+  ALIAS_STAGE_LABELS,
+  ALIAS_STAGE_TO_ELEMENT,
+} from "@/lib/trickcal/constants";
+import type { BuildMode, AliasStage } from "@/lib/trickcal/constants";
 import { useToast, Toast } from "@/components/ui/toast";
 import { BuildPostForm } from "./build-post-form";
 
@@ -26,7 +34,8 @@ type CharacterInfo = {
 
 type BuildItem = {
   id: string;
-  mode: "general" | "arena" | "dimension" | "world_tree";
+  mode: BuildMode;
+  alias_stage?: AliasStage | null;
   party_size: number;
   members: string[];
   members_detail: CharacterInfo[];
@@ -96,6 +105,14 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
 
   // URLパラメータからフィルター状態を復元
   const mode = (searchParams.get("mode") as BuildMode) || "general";
+  const aliasStageParam = searchParams.get("alias_stage");
+  // alias_stage は mode='alias' の時だけ有効（不正値は null 扱い）
+  const aliasStage: AliasStage | null =
+    mode === "alias" && aliasStageParam && (ALIAS_STAGES as readonly string[]).includes(aliasStageParam)
+      ? (aliasStageParam as AliasStage)
+      : mode === "alias"
+        ? "pure" // alias 選択中はデフォルトで純粋
+        : null;
   const elementFilter = searchParams.get("element"); // 単一選択。null なら全て
   const sortKey = (searchParams.get("sort") as SortKey) || "popular";
 
@@ -113,12 +130,23 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
     // デフォルト値は削除
     if (params.get("mode") === "general") params.delete("mode");
     if (params.get("sort") === "popular") params.delete("sort");
+    // alias_stage は mode=alias 以外では不要
+    if (params.get("mode") !== "alias") params.delete("alias_stage");
     const query = params.toString();
     router.replace(query ? `?${query}` : "/trickcal/builds", { scroll: false });
   }, [searchParams, router]);
 
   const setMode = useCallback((newMode: BuildMode) => {
-    updateParams({ mode: newMode, element: null });
+    // alias 選択時は alias_stage=pure を初期値に、それ以外は alias_stage クリア
+    updateParams({
+      mode: newMode,
+      element: null,
+      alias_stage: newMode === "alias" ? "pure" : null,
+    });
+  }, [updateParams]);
+
+  const setAliasStage = useCallback((stage: AliasStage) => {
+    updateParams({ alias_stage: stage });
   }, [updateParams]);
 
   const setElementFilter = useCallback((next: string | null) => {
@@ -136,11 +164,12 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
   const [formOpen, setFormOpen] = useState(false);
   const { toast, showToast } = useToast();
 
-  // mode 変更時にだけサーバーフェッチ。要素フィルターはクライアント側で即時適用
+  // mode/alias_stage 変更時にだけサーバーフェッチ。要素フィルターはクライアント側で即時適用
   const abortRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
 
-  // mode ごとのレスポンスキャッシュ（同セッション内で再訪時に即時表示）
+  // (mode, alias_stage) ごとのレスポンスキャッシュ（同セッション内で再訪時に即時表示）
+  const cacheKey = mode === "alias" && aliasStage ? `alias:${aliasStage}` : mode;
   const buildsCacheRef = useRef<
     Map<string, { builds: BuildItem[]; hasMore: boolean; nextCursor: string | null }>
   >(new Map());
@@ -168,6 +197,9 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
       if (!silent) setLoading(true);
       try {
         const params = new URLSearchParams({ mode });
+        if (mode === "alias" && aliasStage) {
+          params.set("alias_stage", aliasStage);
+        }
         // 要素フィルターはサーバーに送らない（クライアント側で適用）
         params.set("sort", "popular");
         if (cursorId) params.set("cursor", cursorId);
@@ -183,7 +215,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         if (cursorId) {
           setBuilds((prev) => {
             const merged = [...prev, ...data.builds];
-            buildsCacheRef.current.set(mode, {
+            buildsCacheRef.current.set(cacheKey, {
               builds: merged,
               hasMore: data.has_more,
               nextCursor: data.next_cursor,
@@ -192,7 +224,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
           });
         } else {
           setBuilds(data.builds);
-          buildsCacheRef.current.set(mode, {
+          buildsCacheRef.current.set(cacheKey, {
             builds: data.builds,
             hasMore: data.has_more,
             nextCursor: data.next_cursor,
@@ -210,15 +242,14 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         if (silent) setInitialLoaded(true);
       }
     },
-    [mode]
+    [mode, aliasStage, cacheKey]
   );
 
-  // mode 変更時のみ再フェッチ（要素フィルターはクライアント側）。
-  // 訪問済み mode はキャッシュから即時復元しつつ、裏で SWR 的に再取得して
-  // 最新の投稿・リアクション数を反映する。
+  // mode/alias_stage 変更時のみ再フェッチ（要素フィルターはクライアント側）。
+  // 訪問済みキャッシュキーから即時復元しつつ、裏で SWR 的に再取得する。
   const initialSkip = useRef(!!initialBuilds);
   useEffect(() => {
-    if (initialSkip.current && mode === "general") {
+    if (initialSkip.current && cacheKey === "general") {
       initialSkip.current = false;
       // 初回 SSR データは ISR(60秒) で最大1分古い可能性。裏で軽く再取得
       fetchBuilds(undefined, { silent: true });
@@ -226,7 +257,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
     }
     initialSkip.current = false;
 
-    const cached = buildsCacheRef.current.get(mode);
+    const cached = buildsCacheRef.current.get(cacheKey);
     if (cached) {
       setBuilds(cached.builds);
       setHasMore(cached.hasMore);
@@ -239,13 +270,13 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
     setNextCursor(null);
     setHasMore(false);
     fetchBuilds();
-  }, [fetchBuilds, mode]);
+  }, [fetchBuilds, cacheKey]);
 
   // builds 変更（リアクション・楽観的更新など）をキャッシュに反映
   useEffect(() => {
     if (builds.length === 0) return;
-    buildsCacheRef.current.set(mode, { builds, hasMore, nextCursor });
-  }, [builds, hasMore, nextCursor, mode]);
+    buildsCacheRef.current.set(cacheKey, { builds, hasMore, nextCursor });
+  }, [builds, hasMore, nextCursor, cacheKey]);
 
   // クライアント側で要素フィルター → ソート
   // 単一性格の編成は element_label 一致で判定。混合編成はメンバーに該当性格が
@@ -364,7 +395,9 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
         <div id="build-form" className="mb-6">
           <BuildPostForm
             mode={mode}
+            aliasStage={aliasStage ?? undefined}
             onModeChange={(newMode) => setMode(newMode)}
+            onAliasStageChange={(s) => setAliasStage(s)}
             onPosted={() => {
               setSortKey("newest");
               setFormOpen(false);
@@ -380,6 +413,11 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
             onClose={() => setFormOpen(false)}
           />
         </div>
+      )}
+
+      {/* alias mode: ステージタブ（モバイル・PC共通） */}
+      {mode === "alias" && (
+        <AliasStageTabs current={aliasStage} onChange={setAliasStage} />
       )}
 
       {/* モバイル: 性格フィルター + ソート */}
@@ -662,7 +700,9 @@ function BuildCard({
                 ) : null
               ))}
             <span className="rounded-md bg-bg-card-alpha-light px-2 py-0.5 text-[10px] md:text-xs font-bold text-text-muted">
-              {BUILD_MODE_LABEL_MAP[build.mode]}
+              {build.mode === "alias" && build.alias_stage
+                ? `${BUILD_MODE_LABEL_MAP[build.mode]}・${ALIAS_STAGE_LABELS[build.alias_stage]}`
+                : BUILD_MODE_LABEL_MAP[build.mode]}
             </span>
           </div>
         </div>
@@ -793,6 +833,44 @@ function EmptyState() {
       <p className="mt-1 text-sm text-text-tertiary">
         最初の投稿者になろう！
       </p>
+    </div>
+  );
+}
+
+function AliasStageTabs({
+  current,
+  onChange,
+}: {
+  current: AliasStage | null;
+  onChange: (stage: AliasStage) => void;
+}) {
+  return (
+    <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1">
+      {ALIAS_STAGES.map((stage) => {
+        const active = current === stage;
+        const elem = ALIAS_STAGE_TO_ELEMENT[stage];
+        const icon = elem ? ELEMENT_ICONS[elem] : null;
+        return (
+          <button
+            key={stage}
+            onClick={() => onChange(stage)}
+            className={cn(
+              "flex shrink-0 items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-xs font-bold transition-colors cursor-pointer",
+              active
+                ? "bg-[rgba(255,99,126,0.15)] text-text-primary shadow-[0px_4px_6px_0px_rgba(0,0,0,0.1)]"
+                : "bg-bg-input text-text-tertiary"
+            )}
+            style={{
+              border: `1.2px solid ${active ? "rgba(255,99,126,0.4)" : "var(--border-primary)"}`,
+            }}
+          >
+            {icon && (
+              <StaticIcon src={icon} alt={ALIAS_STAGE_LABELS[stage]} width={16} height={16} className="h-4 w-4" />
+            )}
+            <span>{ALIAS_STAGE_LABELS[stage]}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

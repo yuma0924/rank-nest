@@ -22,12 +22,13 @@ type CharacterInfo = {
   is_hidden: boolean;
 };
 
-import { BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
-import type { BuildMode } from "@/lib/trickcal/constants";
+import { BUILD_MODE_LABEL_MAP, ALIAS_STAGE_LABELS } from "@/lib/trickcal/constants";
+import type { BuildMode, AliasStage } from "@/lib/trickcal/constants";
 
 type BuildData = {
   id: string;
   mode: BuildMode;
+  alias_stage: AliasStage | null;
   party_size: number;
   members: (string | null)[];
   element_label: string | null;
@@ -45,6 +46,7 @@ type BuildData = {
 type SimilarBuild = {
   id: string;
   mode: BuildMode;
+  alias_stage: AliasStage | null;
   title: string | null;
   display_name: string | null;
   comment: string;
@@ -79,9 +81,14 @@ export async function generateMetadata({
   }
 
   const modeLabel = BUILD_MODE_LABEL_MAP[build.mode] ?? build.mode;
-  const buildTitle = build.title || `${build.element_label ?? ""}${modeLabel}`;
+  const stageLabel =
+    build.mode === "alias" && build.alias_stage
+      ? ALIAS_STAGE_LABELS[build.alias_stage]
+      : null;
+  const fullModeLabel = stageLabel ? `${modeLabel}・${stageLabel}` : modeLabel;
+  const buildTitle = build.title || `${build.element_label ?? ""}${fullModeLabel}`;
   const author = build.display_name ? ` by ${build.display_name}` : "";
-  const tags = [build.element_label, modeLabel].filter(Boolean).join("・");
+  const tags = [build.element_label, fullModeLabel].filter(Boolean).join("・");
   const commentSnippet = build.comment
     ? build.comment.slice(0, 60).replace(/\n/g, " ")
     : "";
@@ -131,14 +138,19 @@ export default async function BuildDetailPage({
 
   const actualMemberIds = build.members.filter((id): id is string => id !== null);
 
-  // similar builds + コメントを並列
+  // similar builds + コメントを並列。
+  // mode='alias' の時はステージも一致させる（party_size/構成が違うため別ステージは無関係）
+  const candidatesQuery = supabase
+    .from("builds")
+    .select("*")
+    .eq("is_deleted", false)
+    .neq("id", buildId)
+    .eq("mode", build.mode);
+  if (build.mode === "alias" && build.alias_stage) {
+    candidatesQuery.eq("alias_stage", build.alias_stage);
+  }
   const [{ data: rawCandidates }, commentsResult] = await Promise.all([
-    supabase
-      .from("builds")
-      .select("*")
-      .eq("is_deleted", false)
-      .neq("id", buildId)
-      .eq("mode", build.mode)
+    candidatesQuery
       .order("likes_count", { ascending: false })
       .limit(20),
     supabase
@@ -183,6 +195,7 @@ export default async function BuildDetailPage({
   const similarBuilds: SimilarBuild[] = candidates.map((sb) => ({
     id: sb.id,
     mode: sb.mode,
+    alias_stage: sb.alias_stage,
     title: sb.title,
     display_name: sb.display_name,
     comment: sb.comment,
@@ -207,8 +220,16 @@ export default async function BuildDetailPage({
   const commentsData = (commentsRaw ?? []).slice(0, 20);
   const hasMoreComments = (commentsRaw ?? []).length > 20;
 
+  const buildModeLabel = BUILD_MODE_LABEL_MAP[build.mode] ?? build.mode;
+  const buildStageLabel =
+    build.mode === "alias" && build.alias_stage
+      ? ALIAS_STAGE_LABELS[build.alias_stage]
+      : null;
+  const buildFullModeLabel = buildStageLabel
+    ? `${buildModeLabel}・${buildStageLabel}`
+    : buildModeLabel;
   const buildTitle =
-    build.title || `${build.element_label ?? ""}${BUILD_MODE_LABEL_MAP[build.mode] ?? build.mode}`;
+    build.title || `${build.element_label ?? ""}${buildFullModeLabel}`;
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -242,6 +263,7 @@ export default async function BuildDetailPage({
         build={{
           id: build.id,
           mode: build.mode,
+          alias_stage: build.alias_stage,
           party_size: build.party_size,
           element_label: build.element_label,
           title: build.title,

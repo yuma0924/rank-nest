@@ -5,6 +5,8 @@ import { StaticIcon } from "@/components/ui/static-icon";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAllVisibleCharacters } from "@/lib/trickcal/cached-queries";
 import { BuildsClient } from "./builds-client";
+import { getBuildPartySize } from "@/lib/trickcal/constants";
+import type { AliasStage, BuildMode } from "@/lib/trickcal/constants";
 
 const ELEMENT_ICON_MAP: Record<string, string> = {
   純粋: "/icons/pure.png",
@@ -51,7 +53,7 @@ export default async function BuildsPage() {
     getAllVisibleCharacters(),
     supabase
       .from("builds")
-      .select("id, mode, members, element_label, title, display_name, comment, likes_count, dislikes_count, updated_at, user_hash, build_comments(count)")
+      .select("id, mode, alias_stage, members, element_label, title, display_name, comment, likes_count, dislikes_count, updated_at, user_hash, build_comments(count)")
       .eq("is_deleted", false)
       .eq("mode", "general")
       .order("likes_count", { ascending: false })
@@ -97,8 +99,12 @@ export default async function BuildsPage() {
   const initialBuildsData = {
     builds: (initialBuilds ?? []).slice(0, 20).map((b) => ({
       id: b.id,
-      mode: b.mode as "general" | "arena" | "dimension" | "world_tree",
-      party_size: b.mode === "dimension" ? 9 : 6,
+      mode: b.mode as BuildMode,
+      alias_stage: (b.alias_stage ?? null) as AliasStage | null,
+      party_size: getBuildPartySize(
+        b.mode as BuildMode,
+        (b.alias_stage ?? null) as AliasStage | null
+      ),
       members: b.members as string[],
       members_detail: (b.members as (string | null)[]).filter((id): id is string => id !== null).map((id) => {
         const c = buildCharMap.get(id);
