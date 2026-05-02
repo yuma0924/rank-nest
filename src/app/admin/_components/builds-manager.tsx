@@ -129,7 +129,7 @@ export function BuildsManager() {
                     {b.element_label || "-"}
                   </td>
                   <td className="px-3 py-2 text-text-secondary">
-                    {b.display_name || "名無し"}
+                    {b.display_name || "名無しの教主"}
                   </td>
                   <td className="max-w-xs truncate px-3 py-2 text-text-primary">
                     {b.comment}

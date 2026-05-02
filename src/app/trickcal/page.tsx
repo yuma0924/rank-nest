@@ -319,7 +319,7 @@ export default async function Home() {
       if (!featuredMap.has(fc.character_id) && fc.body) {
         featuredMap.set(fc.character_id, {
           body: fc.body,
-          author: fc.display_name || "名無し",
+          author: fc.display_name || "名無しの教主",
           thumbsUp: fc.thumbs_up_count ?? 0,
         });
       }
@@ -342,7 +342,7 @@ export default async function Home() {
         if (!featuredMap.has(fc.character_id) && fc.body) {
           featuredMap.set(fc.character_id, {
             body: fc.body,
-            author: fc.display_name || "名無し",
+            author: fc.display_name || "名無しの教主",
             thumbsUp: fc.thumbs_up_count ?? 0,
           });
         }
@@ -411,7 +411,7 @@ export default async function Home() {
       if (!trendingCommentMap.has(rc.character_id) && rc.body) {
         trendingCommentMap.set(rc.character_id, {
           body: rc.body,
-          author: rc.display_name || "名無し",
+          author: rc.display_name || "名無しの教主",
           thumbsUp: rc.thumbs_up_count ?? 0,
         });
       }

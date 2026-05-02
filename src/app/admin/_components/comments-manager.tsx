@@ -164,7 +164,7 @@ export function CommentsManager() {
                     {c.characters?.name || "-"}
                   </td>
                   <td className="px-3 py-2 text-text-secondary">
-                    {c.display_name || "名無し"}
+                    {c.display_name || "名無しの教主"}
                   </td>
                   <td className="max-w-xs truncate px-3 py-2 text-text-primary">
                     {c.body || "-"}

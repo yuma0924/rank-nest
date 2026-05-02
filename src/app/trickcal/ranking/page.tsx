@@ -154,7 +154,7 @@ export default async function RankingPage() {
       if (!trendingCommentMap.has(rc.character_id) && rc.body) {
         trendingCommentMap.set(rc.character_id, {
           body: rc.body,
-          author: rc.display_name || "名無し",
+          author: rc.display_name || "名無しの教主",
           thumbsUp: rc.thumbs_up_count ?? 0,
         });
       }
