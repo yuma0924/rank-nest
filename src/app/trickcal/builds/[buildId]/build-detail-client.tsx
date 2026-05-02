@@ -736,14 +736,19 @@ export function BuildDetailClient({
                 maxLength={50}
                 className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
               />
-              <textarea
-                value={commentBody}
-                onChange={(e) => setCommentBody(e.target.value)}
-                placeholder="コメントを入力（必須）"
-                maxLength={300}
-                rows={3}
-                className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none resize-none"
-              />
+              <div>
+                <label className="mb-1 block text-xs text-text-secondary">
+                  コメント<span className="text-[#f87171]">*</span>
+                </label>
+                <textarea
+                  value={commentBody}
+                  onChange={(e) => setCommentBody(e.target.value)}
+                  placeholder="コメントを入力..."
+                  maxLength={300}
+                  rows={3}
+                  className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none resize-none"
+                />
+              </div>
               {commentError && (
                 <p className="text-sm text-thumbs-down">{commentError}</p>
               )}

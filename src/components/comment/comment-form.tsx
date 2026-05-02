@@ -143,14 +143,19 @@ export function CommentForm({
         </div>
       )}
 
-      <textarea
-        value={body}
-        onChange={handleBodyChange}
-        placeholder="コメントを入力..."
-        rows={4}
-        maxLength={MAX_CHARS}
-        className="w-full resize-none rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
-      />
+      <div>
+        <label className="mb-1 block text-xs text-text-secondary">
+          コメント<span className="text-[#f87171]">*</span>
+        </label>
+        <textarea
+          value={body}
+          onChange={handleBodyChange}
+          placeholder="コメントを入力..."
+          rows={4}
+          maxLength={MAX_CHARS}
+          className="w-full resize-none rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+        />
+      </div>
 
       {/* 画像添付 */}
       <div>
