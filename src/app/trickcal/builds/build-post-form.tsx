@@ -11,12 +11,9 @@ import {
   ELEMENT_ICONS,
   BUILD_MODE_OPTIONS,
   POSITION_ICON_MAP,
-  ALIAS_STAGES,
-  ALIAS_STAGE_LABELS,
-  ALIAS_STAGE_TO_ELEMENT,
   getBuildPartySize,
 } from "@/lib/trickcal/constants";
-import type { BuildMode, AliasStage } from "@/lib/trickcal/constants";
+import type { BuildMode } from "@/lib/trickcal/constants";
 
 
 type CharacterInfo = {
@@ -32,9 +29,7 @@ type CharacterInfo = {
 
 interface BuildPostFormProps {
   mode?: BuildMode;
-  aliasStage?: AliasStage;
   onModeChange?: (mode: BuildMode) => void;
-  onAliasStageChange?: (stage: AliasStage) => void;
   onPosted: () => void;
   onClose?: () => void;
 }
@@ -54,20 +49,8 @@ function getSlotColumn(slotIndex: number, rowCount: number): string {
   return POSITION_LABELS[colIdx];
 }
 
-export function BuildPostForm({
-  mode: externalMode,
-  aliasStage: externalAliasStage,
-  onModeChange,
-  onAliasStageChange,
-  onPosted,
-  onClose,
-}: BuildPostFormProps) {
+export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onClose }: BuildPostFormProps) {
   const [formMode, setBuildMode] = useState<BuildMode>(externalMode ?? "general");
-  const [aliasStage, setAliasStageState] = useState<AliasStage>(externalAliasStage ?? "pure");
-  const setAliasStage = (s: AliasStage) => {
-    setAliasStageState(s);
-    onAliasStageChange?.(s);
-  };
   const [elementFilter, setElementFilter] = useState<string>("");
   const [positionFilter, setPositionFilter] = useState<string>("");
   const [positionFilterManual, setPositionFilterManual] = useState(false);
@@ -84,14 +67,6 @@ export function BuildPostForm({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalMode]);
-
-  // 外部の aliasStage 変更を同期
-  useEffect(() => {
-    if (externalAliasStage && externalAliasStage !== aliasStage) {
-      setAliasStageState(externalAliasStage);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [externalAliasStage]);
 
   // 選択中のキャラ（スロットに配置する前の一時状態）
   const [selectedChar, setSelectedChar] = useState<CharacterInfo | null>(null);
@@ -152,9 +127,9 @@ export function BuildPostForm({
     loadCharacters();
   }, [charsLoaded]);
 
-  // モード/ステージ変更時、編成サイズを切り替えつつ既存の選択は可能な限り保持する
+  // モード変更時、編成サイズを切り替えつつ既存の選択は可能な限り保持する
   useEffect(() => {
-    const size = getBuildPartySize(formMode, formMode === "alias" ? aliasStage : null);
+    const size = getBuildPartySize(formMode);
     setFormation((prev) => {
       if (prev.length === size) return prev;
       const next: (CharacterInfo | null)[] = Array(size).fill(null);
@@ -167,9 +142,9 @@ export function BuildPostForm({
     setSelectedSlot(null);
     setPositionFilter("");
     setPositionFilterManual(false);
-  }, [formMode, aliasStage]);
+  }, [formMode]);
 
-  const partySize = getBuildPartySize(formMode, formMode === "alias" ? aliasStage : null);
+  const partySize = getBuildPartySize(formMode);
   const rowCount = getRowCount();
 
   // 配置済みキャラIDセット
@@ -376,7 +351,6 @@ export function BuildPostForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: formMode,
-          alias_stage: formMode === "alias" ? aliasStage : undefined,
           members: formation.map((c) => c?.id ?? null),
           comment: comment.trim(),
           title: title.trim() || undefined,
@@ -436,7 +410,7 @@ export function BuildPostForm({
       </div>
 
       {/* モード選択（モバイルのみ） */}
-      <div className="mb-4 space-y-2 md:hidden">
+      <div className="mb-4 md:hidden">
         <div className="relative">
           <select
             value={formMode}
@@ -457,10 +431,6 @@ export function BuildPostForm({
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </div>
-        {/* エーリアスのステージ選択（モバイル） */}
-        {formMode === "alias" && (
-          <AliasStagePicker current={aliasStage} onChange={setAliasStage} />
-        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -488,12 +458,6 @@ export function BuildPostForm({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </div>
-            {/* エーリアスのステージ選択（PC） */}
-            {formMode === "alias" && (
-              <div className="hidden md:block">
-                <AliasStagePicker current={aliasStage} onChange={setAliasStage} compact />
-              </div>
-            )}
             <span className="hidden shrink-0 text-sm text-text-muted md:inline">性格</span>
             <div className="flex gap-1.5">
               {ELEMENTS.map((elem) => {
@@ -901,43 +865,3 @@ export function BuildPostForm({
   );
 }
 
-function AliasStagePicker({
-  current,
-  onChange,
-  compact = false,
-}: {
-  current: AliasStage;
-  onChange: (stage: AliasStage) => void;
-  compact?: boolean;
-}) {
-  return (
-    <div className={cn("flex gap-1.5 overflow-x-auto", !compact && "flex-wrap")}>
-      {ALIAS_STAGES.map((stage) => {
-        const active = current === stage;
-        const elem = ALIAS_STAGE_TO_ELEMENT[stage];
-        const icon = elem ? ELEMENT_ICONS[elem] : null;
-        return (
-          <button
-            key={stage}
-            type="button"
-            onClick={() => onChange(stage)}
-            className={cn(
-              "flex shrink-0 items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-xs font-bold transition-colors cursor-pointer",
-              active
-                ? "bg-[rgba(255,99,126,0.15)] text-text-primary shadow-[0px_4px_6px_0px_rgba(0,0,0,0.1)]"
-                : "bg-bg-input text-text-tertiary"
-            )}
-            style={{
-              border: `1.2px solid ${active ? "rgba(255,99,126,0.4)" : "var(--border-primary)"}`,
-            }}
-          >
-            {icon && (
-              <StaticIcon src={icon} alt={ALIAS_STAGE_LABELS[stage]} width={16} height={16} className="h-4 w-4" />
-            )}
-            <span>{ALIAS_STAGE_LABELS[stage]}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}

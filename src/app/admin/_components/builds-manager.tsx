@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ALIAS_STAGE_LABELS } from "@/lib/trickcal/constants";
-import type { AliasStage, BuildMode } from "@/lib/trickcal/constants";
+import type { BuildMode } from "@/lib/trickcal/constants";
 
 type BuildRow = {
   id: string;
   mode: BuildMode;
-  alias_stage: AliasStage | null;
   party_size: number;
   members: string[];
   element_label: string | null;
@@ -122,9 +120,6 @@ export function BuildsManager() {
                   <td className="px-3 py-2">
                     <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-accent">
                       {b.mode}
-                      {b.mode === "alias" && b.alias_stage
-                        ? `:${ALIAS_STAGE_LABELS[b.alias_stage]}`
-                        : ""}
                     </span>
                   </td>
                   <td className="px-3 py-2 text-text-primary">

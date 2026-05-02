@@ -82,19 +82,13 @@ export async function GET(
 
     const reaction = rawReaction as ReactionRow | null;
 
-    // 似ている編成（同じキャラを含む or 同属性）を取得。
-    // mode='alias' の場合は alias_stage が一致するものに限定（party_size も
-    // ステージで決まるため、別ステージは比較対象として無関係）。
-    const candidatesQuery = supabase
+    // 似ている編成（同じキャラを含む or 同属性）を取得
+    const { data: rawCandidates } = await supabase
       .from("builds")
       .select("*")
       .eq("is_deleted", false)
       .neq("id", buildId)
-      .eq("mode", build.mode);
-    if (build.mode === "alias" && build.alias_stage) {
-      candidatesQuery.eq("alias_stage", build.alias_stage);
-    }
-    const { data: rawCandidates } = await candidatesQuery
+      .eq("mode", build.mode)
       .order("likes_count", { ascending: false })
       .limit(20);
 
@@ -141,7 +135,6 @@ export async function GET(
       similar_builds: similarSorted.map((sb) => ({
         id: sb.id,
         mode: sb.mode,
-        alias_stage: sb.alias_stage,
         party_size: sb.party_size,
         members: sb.members,
         members_detail: sb.members.map(

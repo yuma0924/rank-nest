@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { StaticIcon } from "@/components/ui/static-icon";
 import { cn } from "@/lib/utils";
-import { ELEMENT_ICONS, BUILD_MODE_OPTIONS, BUILD_MODE_LABEL_MAP, ALIAS_STAGE_LABELS } from "@/lib/trickcal/constants";
-import type { BuildMode, AliasStage } from "@/lib/trickcal/constants";
+import { ELEMENT_ICONS, BUILD_MODE_OPTIONS, BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
+import type { BuildMode } from "@/lib/trickcal/constants";
 
 function readBuildFiltersFromURL() {
   if (typeof window === "undefined") return null;
@@ -37,7 +37,6 @@ interface CharInfo {
 interface BuildData {
   id: string;
   mode: string | null;
-  aliasStage: AliasStage | null;
   members: (string | null)[];
   elementLabel: string | null;
   title: string | null;
@@ -189,10 +188,7 @@ export function HomeBuildsSection({ builds, charMap }: HomeuildsSectionProps) {
                     ))}
                     {build.mode && (
                       <span className="rounded-md bg-bg-card-alpha-light px-2 py-0.5 text-[10px] font-bold text-text-muted">
-                        {(BUILD_MODE_LABEL_MAP[build.mode as BuildMode] ?? build.mode)}
-                        {build.mode === "alias" && build.aliasStage
-                          ? `・${ALIAS_STAGE_LABELS[build.aliasStage]}`
-                          : ""}
+                        {BUILD_MODE_LABEL_MAP[build.mode as BuildMode] ?? build.mode}
                       </span>
                     )}
                   </div>

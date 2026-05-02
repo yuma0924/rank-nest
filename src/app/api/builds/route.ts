@@ -2,13 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  ALIAS_STAGES,
-  ALIAS_STAGE_LABELS,
   DEFAULT_DISPLAY_NAME,
   MAX_DISPLAY_NAME_LENGTH,
   getBuildPartySize,
 } from "@/lib/trickcal/constants";
-import type { AliasStage } from "@/lib/trickcal/constants";
 import type { Build } from "@/types/trickcal";
 import {
   getUserHash,
@@ -46,7 +43,6 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const mode = searchParams.get("mode");
-    const aliasStageParam = searchParams.get("alias_stage");
     const elementParam = searchParams.get("element");
     // カンマ区切りで複数性格対応、複数指定時は「混合」も含める
     const elementLabels: string[] = elementParam
@@ -63,27 +59,15 @@ export async function GET(request: NextRequest) {
       50
     );
 
-    const VALID_MODES = ["general", "arena", "dimension", "world_tree", "alias"] as const;
+    const VALID_MODES = ["general", "arena", "dimension", "world_tree", "alias", "meow"] as const;
     type ValidMode = (typeof VALID_MODES)[number];
     if (!mode || !(VALID_MODES as readonly string[]).includes(mode)) {
       return NextResponse.json(
-        { error: "mode パラメータは 'general', 'arena', 'dimension', 'world_tree', 'alias' のいずれかを指定してください" },
+        { error: "mode パラメータが不正です" },
         { status: 400 }
       );
     }
     const validMode = mode as ValidMode;
-
-    // alias_stage は mode='alias' の時のみ受け付ける（任意フィルター）
-    let aliasStageFilter: AliasStage | null = null;
-    if (validMode === "alias" && aliasStageParam) {
-      if (!(ALIAS_STAGES as readonly string[]).includes(aliasStageParam)) {
-        return NextResponse.json(
-          { error: "alias_stage が不正です" },
-          { status: 400 }
-        );
-      }
-      aliasStageFilter = aliasStageParam as AliasStage;
-    }
 
     const supabase = createAdminClient();
 
@@ -104,8 +88,6 @@ export async function GET(request: NextRequest) {
           .select("*")
           .eq("mode", validMode)
           .eq("is_deleted", false);
-
-        if (aliasStageFilter) q = q.eq("alias_stage", aliasStageFilter);
 
         if (sortKey === "newest") {
           q = q.lt("updated_at", cursorBuild.updated_at);
@@ -138,8 +120,6 @@ export async function GET(request: NextRequest) {
           .select("*")
           .eq("mode", validMode)
           .eq("is_deleted", false);
-
-        if (aliasStageFilter) q = q.eq("alias_stage", aliasStageFilter);
 
         if (elementLabels.length > 0) q = q.in("element_label", elementLabels);
 
@@ -272,7 +252,6 @@ export async function POST(request: NextRequest) {
 
     let parsed: {
       mode?: string;
-      alias_stage?: string;
       members?: string[];
       comment?: string;
       title?: string;
@@ -288,35 +267,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { mode, alias_stage, members, comment, title, display_name } = parsed;
+    const { mode, members, comment, title, display_name } = parsed;
 
     // バリデーション
-    const VALID_MODES_POST = ["general", "arena", "dimension", "world_tree", "alias"] as const;
+    const VALID_MODES_POST = ["general", "arena", "dimension", "world_tree", "alias", "meow"] as const;
     type ValidModePost = (typeof VALID_MODES_POST)[number];
     if (!mode || !(VALID_MODES_POST as readonly string[]).includes(mode)) {
       return NextResponse.json(
-        { error: "mode は 'general', 'arena', 'dimension', 'world_tree', 'alias' のいずれかを指定してください" },
+        { error: "mode が不正です" },
         { status: 400 }
       );
     }
     const validModePost = mode as ValidModePost;
-
-    // alias_stage バリデーション: mode='alias' なら必須、それ以外は不可
-    let validAliasStage: AliasStage | null = null;
-    if (validModePost === "alias") {
-      if (!alias_stage || !(ALIAS_STAGES as readonly string[]).includes(alias_stage)) {
-        return NextResponse.json(
-          { error: "エーリアスフロンティアではステージを指定してください" },
-          { status: 400 }
-        );
-      }
-      validAliasStage = alias_stage as AliasStage;
-    } else if (alias_stage) {
-      return NextResponse.json(
-        { error: "alias_stage はエーリアスフロンティア専用です" },
-        { status: 400 }
-      );
-    }
 
     if (!Array.isArray(members)) {
       return NextResponse.json(
@@ -334,7 +296,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const maxPartySize = getBuildPartySize(validModePost, validAliasStage);
+    const maxPartySize = getBuildPartySize(validModePost);
     if (actualMembers.length > maxPartySize) {
       return NextResponse.json(
         { error: `メンバーは${maxPartySize}人以内で選択してください` },
@@ -384,16 +346,12 @@ export async function POST(request: NextRequest) {
         BUILD_RATE_LIMIT_SECONDS
       ),
       supabase.from("characters").select("id, element").in("id", actualMembers),
-      (() => {
-        let q = supabase
-          .from("builds")
-          .select("id, members")
-          .eq("user_hash", userHash)
-          .eq("mode", validModePost)
-          .eq("is_deleted", false);
-        if (validAliasStage) q = q.eq("alias_stage", validAliasStage);
-        return q;
-      })(),
+      supabase
+        .from("builds")
+        .select("id, members")
+        .eq("user_hash", userHash)
+        .eq("mode", validModePost)
+        .eq("is_deleted", false),
     ]);
 
     if (banned) {
@@ -441,13 +399,10 @@ export async function POST(request: NextRequest) {
       dimension: "次元の衝突",
       world_tree: "世界樹採掘基地",
       alias: "エーリアスフロンティア",
+      meow: "M.E.O.W",
     };
-    const baseModeLabel = modeLabelMap[validModePost] ?? validModePost;
-    const defaultTitle =
-      validModePost === "alias" && validAliasStage
-        ? `${baseModeLabel} ${ALIAS_STAGE_LABELS[validAliasStage]}`
-        : baseModeLabel;
-    const finalTitle = title?.trim() || defaultTitle;
+    const finalTitle =
+      title?.trim() || (modeLabelMap[validModePost] ?? validModePost);
     const finalDisplayName = display_name?.trim() || DEFAULT_DISPLAY_NAME;
 
     const actualPartySize = actualMembers.length;
@@ -475,7 +430,6 @@ export async function POST(request: NextRequest) {
       .from("builds")
       .insert({
         mode: validModePost,
-        alias_stage: validAliasStage,
         party_size: actualPartySize,
         members,
         element_label: elementLabel,

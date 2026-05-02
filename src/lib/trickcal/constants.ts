@@ -21,7 +21,14 @@ export const ELEMENT_ICONS: Record<string, string> = {
   憂鬱: "/icons/melancholy.png",
 };
 
-export const BUILD_MODES = ["general", "arena", "dimension", "world_tree", "alias"] as const;
+export const BUILD_MODES = [
+  "general",
+  "arena",
+  "dimension",
+  "world_tree",
+  "alias",
+  "meow",
+] as const;
 export type BuildMode = (typeof BUILD_MODES)[number];
 
 export const BUILD_MODE_OPTIONS: { value: BuildMode; label: string }[] = [
@@ -30,6 +37,7 @@ export const BUILD_MODE_OPTIONS: { value: BuildMode; label: string }[] = [
   { value: "dimension", label: "次元の衝突" },
   { value: "world_tree", label: "世界樹採掘基地" },
   { value: "alias", label: "エーリアスフロンティア" },
+  { value: "meow", label: "M.E.O.W" },
 ];
 
 export const BUILD_MODE_LABEL_MAP: Record<BuildMode, string> = {
@@ -38,53 +46,12 @@ export const BUILD_MODE_LABEL_MAP: Record<BuildMode, string> = {
   dimension: "次元",
   world_tree: "世界樹",
   alias: "エーリアス",
-};
-
-// エーリアスフロンティアのサブステージ
-export const ALIAS_STAGES = [
-  "pure",
-  "calm",
-  "madness",
-  "lively",
-  "melancholy",
-  "meow",
-] as const;
-export type AliasStage = (typeof ALIAS_STAGES)[number];
-
-export const ALIAS_STAGE_LABELS: Record<AliasStage, string> = {
-  pure: "純粋",
-  calm: "冷静",
-  madness: "狂気",
-  lively: "活発",
-  melancholy: "憂鬱",
   meow: "M.E.O.W",
 };
 
-export const ALIAS_STAGE_OPTIONS: { value: AliasStage; label: string }[] =
-  ALIAS_STAGES.map((s) => ({ value: s, label: ALIAS_STAGE_LABELS[s] }));
-
-// 性格ステージ（純粋〜憂鬱）に対応する Element（性格）。アイコン表示に流用する。
-export const ALIAS_STAGE_TO_ELEMENT: Record<AliasStage, Element | null> = {
-  pure: "純粋",
-  calm: "冷静",
-  madness: "狂気",
-  lively: "活発",
-  melancholy: "憂鬱",
-  meow: null,
-};
-
-// alias_stage に応じた party_size（meow のみ 9、それ以外 6）
-export function getAliasStagePartySize(stage: AliasStage): number {
-  return stage === "meow" ? 9 : 6;
-}
-
-// mode + alias_stage から party_size を返す共通ヘルパー
-export function getBuildPartySize(
-  mode: BuildMode,
-  aliasStage: AliasStage | null
-): number {
-  if (mode === "dimension") return 9;
-  if (mode === "alias" && aliasStage) return getAliasStagePartySize(aliasStage);
+// mode から party_size 上限を返す。dimension / meow は 9、それ以外は 6。
+export function getBuildPartySize(mode: BuildMode): number {
+  if (mode === "dimension" || mode === "meow") return 9;
   return 6;
 }
 

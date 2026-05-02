@@ -260,7 +260,7 @@ export default async function Home() {
       .limit(2),
     supabase
       .from("builds")
-      .select("id, mode, alias_stage, members, element_label, title, display_name, comment, likes_count, dislikes_count, updated_at, build_comments(count)")
+      .select("id, mode, members, element_label, title, display_name, comment, likes_count, dislikes_count, updated_at, build_comments(count)")
       .eq("is_deleted", false)
       .order("likes_count", { ascending: false })
       .order("updated_at", { ascending: false })
@@ -504,7 +504,6 @@ export default async function Home() {
     return {
       id: build.id,
       mode: build.mode,
-      aliasStage: build.alias_stage ?? null,
       members: memberIds,
       elementLabel: build.element_label,
       title: build.title,
