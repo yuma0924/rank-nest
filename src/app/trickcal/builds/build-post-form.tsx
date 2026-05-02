@@ -891,7 +891,7 @@ function MeowToggle({
     <div className="inline-flex shrink-0 gap-1.5">
       {[
         { value: false, label: "性格エリア" },
-        { value: true, label: "M.E.O.W" },
+        { value: true, label: "M.E.O.W（ボス）" },
       ].map((opt) => {
         const active = isMeow === opt.value;
         return (
