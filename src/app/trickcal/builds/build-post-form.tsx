@@ -722,6 +722,11 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
 
         {/* 配置グリッド（PC: 右カラム） */}
         <div className="mt-2 md:mt-0 md:w-64 md:shrink-0">
+        {selectedChar && isAtLimit && (
+          <div className="mb-2 rounded-lg border border-[rgba(244,114,182,0.4)] bg-[rgba(244,114,182,0.12)] px-3 py-1.5 text-[11px] font-bold text-text-secondary">
+            このモードでは{partySize}体が上限です
+          </div>
+        )}
         <div className="overflow-hidden rounded-[14px] border border-border-primary">
           {/* 列ヘッダー */}
           <div className="grid grid-cols-3 bg-bg-inset">
@@ -784,6 +789,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
                       placeable && selectedSlot !== slotIndex && "bg-[rgba(56,189,248,0.08)]",
                       !placeable && isMatchingColumn(slotIndex) && char && "bg-[rgba(56,189,248,0.06)]",
                       !isMatchingColumn(slotIndex) && selectedChar && "opacity-30",
+                      selectedChar && isAtLimit && !char && "opacity-30",
                       isMovingSource && "bg-[rgba(255,99,126,0.18)] ring-2 ring-accent/60 ring-inset",
                       canMoveHere && "bg-[rgba(34,168,112,0.12)]",
                       movingFromSlot !== null && !isMovingSource && !canMoveHere && "opacity-30"
