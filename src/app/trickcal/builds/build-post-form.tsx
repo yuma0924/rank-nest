@@ -39,8 +39,10 @@ interface BuildPostFormProps {
 const POSITION_LABELS = ["後列", "中列", "前列"] as const;
 
 
-function getRowCount(): number {
-  return 3;
+// グリッドの行数。partySize=9 (dimension/M.E.O.W) は 3 行、それ以外は 2 行。
+// 各行 3 列 (前列/中列/後列) なので、行数 × 3 = partySize と一致する。
+function getRowCount(partySize: number): number {
+  return partySize === 9 ? 3 : 2;
 }
 
 // スロットインデックスからポジション列を取得
@@ -152,7 +154,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
   }, [formMode, isMeow]);
 
   const partySize = getBuildFormPartySize(formMode, isMeow);
-  const rowCount = getRowCount();
+  const rowCount = getRowCount(partySize);
 
   // 配置済みキャラIDセット
   const placedIds = useMemo(
