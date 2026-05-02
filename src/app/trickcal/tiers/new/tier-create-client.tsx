@@ -239,7 +239,7 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="ティアのタイトル"
+                placeholder="タイトルを入力"
                 maxLength={100}
                 className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:border-accent/50 focus:outline-none"
               />
