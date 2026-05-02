@@ -446,9 +446,9 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* 性格フィルター + 検索 */}
         <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2 md:gap-3">
-            {/* PC: モード選択 */}
-            <div className="relative hidden md:block">
+          {/* PC: モード + M.E.O.Wトグル（独立した1段目。長文ラベルでも改行を防ぐ） */}
+          <div className="hidden md:flex md:items-center md:gap-3">
+            <div className="relative">
               <select
                 value={formMode}
                 onChange={(e) => {
@@ -469,10 +469,10 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
               </svg>
             </div>
             {formMode === "alias" && (
-              <div className="hidden md:block">
-                <MeowToggle isMeow={isMeow} onChange={setIsMeow} />
-              </div>
+              <MeowToggle isMeow={isMeow} onChange={setIsMeow} />
             )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <span className="hidden shrink-0 text-sm text-text-muted md:inline">性格</span>
             <div className="flex gap-1.5">
               {ELEMENTS.map((elem) => {
@@ -897,7 +897,7 @@ function MeowToggle({
           !isMeow ? "bg-bg-card-alpha-heavy text-text-primary" : "text-text-tertiary"
         )}
       >
-        通常 (6体)
+        性格エリア
       </button>
       <button
         type="button"
@@ -907,7 +907,7 @@ function MeowToggle({
           isMeow ? "bg-bg-card-alpha-heavy text-text-primary" : "text-text-tertiary"
         )}
       >
-        M.E.O.W (9体)
+        M.E.O.W
       </button>
     </div>
   );
