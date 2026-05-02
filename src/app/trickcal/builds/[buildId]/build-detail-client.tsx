@@ -739,7 +739,7 @@ export function BuildDetailClient({
               <textarea
                 value={commentBody}
                 onChange={(e) => setCommentBody(e.target.value)}
-                placeholder="コメントを入力..."
+                placeholder="コメントを入力（必須）"
                 maxLength={300}
                 rows={3}
                 className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none resize-none"
@@ -747,7 +747,7 @@ export function BuildDetailClient({
               {commentError && (
                 <p className="text-sm text-thumbs-down">{commentError}</p>
               )}
-              <Button type="submit" disabled={commentSubmitting} className="w-full">
+              <Button type="submit" disabled={commentSubmitting || !commentBody.trim()} className="w-full">
                 {commentSubmitting ? "投稿中..." : "コメントする"}
               </Button>
             </form>
