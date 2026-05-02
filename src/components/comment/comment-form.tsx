@@ -108,22 +108,21 @@ export function CommentForm({
       onSubmit={handleSubmit}
       className={cn("rounded-2xl bg-bg-card border border-border-primary p-4 space-y-3", className)}
     >
-      <div>
-        <div className="mb-1 flex items-center justify-between">
-          <label className="text-xs text-text-secondary">名前（任意）</label>
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
-              aria-label="閉じる"
-            >
-              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
+      {onClose && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+            aria-label="閉じる"
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
+      )}
+      <div>
         <input
           type="text"
           value={displayName}
