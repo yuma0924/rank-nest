@@ -394,20 +394,7 @@ export async function POST(request: NextRequest) {
     const elementLabel =
       uniqueElements.length === 1 ? uniqueElements[0]! : "混合";
 
-    const modeLabelMap: Record<string, string> = {
-      general: "汎用編成",
-      arena: "PvP",
-      dimension: "次元の衝突",
-      world_tree: "世界樹採掘基地",
-      alias: "エーリアスフロンティア",
-    };
-    // alias && 9体は M.E.O.W としてタイトルを差別化
-    const baseLabel = modeLabelMap[validModePost] ?? validModePost;
-    const defaultTitle =
-      validModePost === "alias" && actualMembers.length === 9
-        ? `${baseLabel} M.E.O.W`
-        : baseLabel;
-    const finalTitle = title?.trim() || defaultTitle;
+    const finalTitle = title?.trim() || "無題の編成";
     const finalDisplayName = display_name?.trim() || DEFAULT_DISPLAY_NAME;
 
     const actualPartySize = actualMembers.length;
