@@ -587,7 +587,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
         </div>
 
         {/* PC: 上段ヘッダー（選択中案内 | カウンター+全解除） */}
-        <div className="hidden md:!mt-2 md:flex md:items-center md:gap-4">
+        <div className="hidden md:!mt-2 md:flex md:min-h-[60px] md:items-center md:gap-4">
           <div className="flex-1">
             {selectedChar ? (
               <div className="flex items-center gap-2 rounded-xl border border-[rgba(56,189,248,0.3)] bg-[rgba(56,189,248,0.08)] px-3 py-2">
