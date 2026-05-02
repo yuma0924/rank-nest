@@ -833,7 +833,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={BUILD_MODE_OPTIONS.find((o) => o.value === formMode)?.label ?? ""}
+              placeholder="編成名（任意）"
               maxLength={100}
               className="min-w-0 flex-1 rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted/50 focus:border-accent/50 focus:outline-none"
             />
