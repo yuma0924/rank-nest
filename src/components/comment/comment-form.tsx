@@ -106,33 +106,32 @@ export function CommentForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className={cn("rounded-2xl bg-bg-card border border-border-primary p-4 space-y-3", className)}
+      className={cn("rounded-2xl bg-bg-card border border-border-primary p-4", className)}
     >
-      <div>
-        <div className="mb-1 flex items-center justify-between">
-          <label className="text-xs text-text-secondary">名前（任意）</label>
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
-              aria-label="閉じる"
-            >
-              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-        <input
-          type="text"
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-          placeholder="名無しの教主"
-          maxLength={20}
-          className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted transition-colors focus:border-accent/50 focus:outline-none"
-        />
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-sm font-bold text-text-primary">コメントを投稿</span>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-full text-text-muted hover:bg-bg-tertiary hover:text-text-primary cursor-pointer"
+            aria-label="閉じる"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
+      <div className="space-y-3">
+      <input
+        type="text"
+        value={displayName}
+        onChange={(e) => setDisplayName(e.target.value)}
+        placeholder="名前（任意）"
+        maxLength={20}
+        className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+      />
 
       {showRating && (
         <div>
@@ -144,17 +143,14 @@ export function CommentForm({
         </div>
       )}
 
-      <div>
-        <label className="mb-1 block text-xs text-text-secondary">コメント<span className="text-[#f87171]">*</span></label>
-        <textarea
-          value={body}
-          onChange={handleBodyChange}
-          placeholder="コメントを入力..."
-          rows={4}
-          maxLength={MAX_CHARS}
-          className="w-full resize-none rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted transition-colors focus:border-accent/50 focus:outline-none"
-        />
-      </div>
+      <textarea
+        value={body}
+        onChange={handleBodyChange}
+        placeholder="コメントを入力..."
+        rows={4}
+        maxLength={MAX_CHARS}
+        className="w-full resize-none rounded-xl border border-border-primary bg-bg-input px-3 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+      />
 
       {/* 画像添付 */}
       <div>
@@ -212,6 +208,7 @@ export function CommentForm({
           </span>
         ) : rating !== null ? "投票する" : "コメントする"}
       </Button>
+      </div>
     </form>
   );
 }
