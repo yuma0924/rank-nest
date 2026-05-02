@@ -566,7 +566,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
         </div>
 
         {/* PC: 上段ヘッダー（選択中案内 | カウンター+全解除） */}
-        <div className="hidden md:flex md:items-center md:gap-4 md:mb-2 md:h-[60px]">
+        <div className="hidden md:!mt-2 md:flex md:items-center md:gap-4">
           <div className="flex-1">
             {selectedChar ? (
               <div className="flex items-center gap-2 rounded-xl border border-[rgba(56,189,248,0.3)] bg-[rgba(56,189,248,0.08)] px-3 py-2">
@@ -619,7 +619,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
         </div>
 
         {/* PC: キャラ選択（左）+ 配置グリッド（右）横並び */}
-        <div className="md:flex md:gap-4">
+        <div className="md:!mt-2 md:flex md:gap-4">
         <div className="md:flex-1">
         {/* キャラグリッド */}
         <div className="max-h-52 overflow-y-auto rounded-xl border border-border-primary bg-bg-inset p-2 md:max-h-80">
@@ -888,27 +888,31 @@ function MeowToggle({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="inline-flex shrink-0 rounded-[12px] border border-border-primary bg-bg-input p-0.5">
-      <button
-        type="button"
-        onClick={() => onChange(false)}
-        className={cn(
-          "rounded-[10px] px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
-          !isMeow ? "bg-bg-card-alpha-heavy text-text-primary" : "text-text-tertiary"
-        )}
-      >
-        性格エリア
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange(true)}
-        className={cn(
-          "rounded-[10px] px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
-          isMeow ? "bg-bg-card-alpha-heavy text-text-primary" : "text-text-tertiary"
-        )}
-      >
-        M.E.O.W
-      </button>
+    <div className="inline-flex shrink-0 gap-1.5">
+      {[
+        { value: false, label: "性格エリア" },
+        { value: true, label: "M.E.O.W" },
+      ].map((opt) => {
+        const active = isMeow === opt.value;
+        return (
+          <button
+            key={String(opt.value)}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={cn(
+              "rounded-[10px] px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
+              active
+                ? "bg-[rgba(255,99,126,0.15)] text-text-primary shadow-[0px_4px_6px_0px_rgba(0,0,0,0.1)]"
+                : "bg-bg-input text-text-tertiary"
+            )}
+            style={{
+              border: `1.2px solid ${active ? "rgba(255,99,126,0.4)" : "var(--border-primary)"}`,
+            }}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
