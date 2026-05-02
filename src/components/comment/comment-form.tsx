@@ -128,7 +128,7 @@ export function CommentForm({
           type="text"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          placeholder="名無しの教主"
+          placeholder="名前（任意）"
           maxLength={20}
           className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted transition-colors focus:border-accent/50 focus:outline-none"
         />
