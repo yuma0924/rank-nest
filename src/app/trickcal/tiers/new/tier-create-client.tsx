@@ -252,7 +252,7 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="名前（任意）"
+                placeholder="名無しの教主"
                 maxLength={50}
                 className="w-full rounded-xl border border-border-primary bg-bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 focus:border-accent/50 focus:outline-none"
               />
