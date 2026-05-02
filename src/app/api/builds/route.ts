@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   DEFAULT_DISPLAY_NAME,
   MAX_DISPLAY_NAME_LENGTH,
-  getBuildPartySize,
+  getBuildMaxPartySize,
 } from "@/lib/trickcal/constants";
 import type { Build } from "@/types/trickcal";
 import {
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       50
     );
 
-    const VALID_MODES = ["general", "arena", "dimension", "world_tree", "alias", "meow"] as const;
+    const VALID_MODES = ["general", "arena", "dimension", "world_tree", "alias"] as const;
     type ValidMode = (typeof VALID_MODES)[number];
     if (!mode || !(VALID_MODES as readonly string[]).includes(mode)) {
       return NextResponse.json(
@@ -270,7 +270,7 @@ export async function POST(request: NextRequest) {
     const { mode, members, comment, title, display_name } = parsed;
 
     // バリデーション
-    const VALID_MODES_POST = ["general", "arena", "dimension", "world_tree", "alias", "meow"] as const;
+    const VALID_MODES_POST = ["general", "arena", "dimension", "world_tree", "alias"] as const;
     type ValidModePost = (typeof VALID_MODES_POST)[number];
     if (!mode || !(VALID_MODES_POST as readonly string[]).includes(mode)) {
       return NextResponse.json(
@@ -296,7 +296,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const maxPartySize = getBuildPartySize(validModePost);
+    // alias は M.E.O.W (9体) と通常 (6体) の両方を許容するため上限のみチェック
+    const maxPartySize = getBuildMaxPartySize(validModePost);
     if (actualMembers.length > maxPartySize) {
       return NextResponse.json(
         { error: `メンバーは${maxPartySize}人以内で選択してください` },
@@ -399,10 +400,14 @@ export async function POST(request: NextRequest) {
       dimension: "次元の衝突",
       world_tree: "世界樹採掘基地",
       alias: "エーリアスフロンティア",
-      meow: "M.E.O.W",
     };
-    const finalTitle =
-      title?.trim() || (modeLabelMap[validModePost] ?? validModePost);
+    // alias && 9体は M.E.O.W としてタイトルを差別化
+    const baseLabel = modeLabelMap[validModePost] ?? validModePost;
+    const defaultTitle =
+      validModePost === "alias" && actualMembers.length === 9
+        ? `${baseLabel} M.E.O.W`
+        : baseLabel;
+    const finalTitle = title?.trim() || defaultTitle;
     const finalDisplayName = display_name?.trim() || DEFAULT_DISPLAY_NAME;
 
     const actualPartySize = actualMembers.length;

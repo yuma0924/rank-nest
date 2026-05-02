@@ -78,7 +78,9 @@ export async function generateMetadata({
     };
   }
 
-  const modeLabel = BUILD_MODE_LABEL_MAP[build.mode] ?? build.mode;
+  const baseModeLabel = BUILD_MODE_LABEL_MAP[build.mode] ?? build.mode;
+  const isMeow = build.mode === "alias" && build.party_size === 9;
+  const modeLabel = isMeow ? `${baseModeLabel}・M.E.O.W` : baseModeLabel;
   const buildTitle = build.title || `${build.element_label ?? ""}${modeLabel}`;
   const author = build.display_name ? ` by ${build.display_name}` : "";
   const tags = [build.element_label, modeLabel].filter(Boolean).join("・");
@@ -207,8 +209,10 @@ export default async function BuildDetailPage({
   const commentsData = (commentsRaw ?? []).slice(0, 20);
   const hasMoreComments = (commentsRaw ?? []).length > 20;
 
+  const buildBaseLabel = BUILD_MODE_LABEL_MAP[build.mode] ?? build.mode;
+  const isBuildMeow = build.mode === "alias" && build.party_size === 9;
   const buildTitle =
-    build.title || `${build.element_label ?? ""}${BUILD_MODE_LABEL_MAP[build.mode] ?? build.mode}`;
+    build.title || `${build.element_label ?? ""}${isBuildMeow ? `${buildBaseLabel}・M.E.O.W` : buildBaseLabel}`;
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",

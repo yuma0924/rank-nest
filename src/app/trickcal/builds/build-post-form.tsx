@@ -11,7 +11,7 @@ import {
   ELEMENT_ICONS,
   BUILD_MODE_OPTIONS,
   POSITION_ICON_MAP,
-  getBuildPartySize,
+  getBuildFormPartySize,
 } from "@/lib/trickcal/constants";
 import type { BuildMode } from "@/lib/trickcal/constants";
 
@@ -51,6 +51,8 @@ function getSlotColumn(slotIndex: number, rowCount: number): string {
 
 export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onClose }: BuildPostFormProps) {
   const [formMode, setBuildMode] = useState<BuildMode>(externalMode ?? "general");
+  // alias モードのとき、M.E.O.W (9体) と通常 (6体) の切替
+  const [isMeow, setIsMeow] = useState<boolean>(false);
   const [elementFilter, setElementFilter] = useState<string>("");
   const [positionFilter, setPositionFilter] = useState<string>("");
   const [positionFilterManual, setPositionFilterManual] = useState(false);
@@ -127,9 +129,14 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
     loadCharacters();
   }, [charsLoaded]);
 
-  // モード変更時、編成サイズを切り替えつつ既存の選択は可能な限り保持する
+  // モード変更時、alias 以外なら M.E.O.W トグルをリセット
   useEffect(() => {
-    const size = getBuildPartySize(formMode);
+    if (formMode !== "alias") setIsMeow(false);
+  }, [formMode]);
+
+  // モード/M.E.O.Wトグル変更時、編成サイズを切り替えつつ既存の選択は可能な限り保持する
+  useEffect(() => {
+    const size = getBuildFormPartySize(formMode, isMeow);
     setFormation((prev) => {
       if (prev.length === size) return prev;
       const next: (CharacterInfo | null)[] = Array(size).fill(null);
@@ -142,9 +149,9 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
     setSelectedSlot(null);
     setPositionFilter("");
     setPositionFilterManual(false);
-  }, [formMode]);
+  }, [formMode, isMeow]);
 
-  const partySize = getBuildPartySize(formMode);
+  const partySize = getBuildFormPartySize(formMode, isMeow);
   const rowCount = getRowCount();
 
   // 配置済みキャラIDセット
@@ -410,7 +417,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
       </div>
 
       {/* モード選択（モバイルのみ） */}
-      <div className="mb-4 md:hidden">
+      <div className="mb-4 space-y-2 md:hidden">
         <div className="relative">
           <select
             value={formMode}
@@ -431,6 +438,9 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </div>
+        {formMode === "alias" && (
+          <MeowToggle isMeow={isMeow} onChange={setIsMeow} />
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -458,6 +468,11 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </div>
+            {formMode === "alias" && (
+              <div className="hidden md:block">
+                <MeowToggle isMeow={isMeow} onChange={setIsMeow} />
+              </div>
+            )}
             <span className="hidden shrink-0 text-sm text-text-muted md:inline">性格</span>
             <div className="flex gap-1.5">
               {ELEMENTS.map((elem) => {
@@ -865,3 +880,35 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
   );
 }
 
+function MeowToggle({
+  isMeow,
+  onChange,
+}: {
+  isMeow: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="inline-flex shrink-0 rounded-[12px] border border-border-primary bg-bg-input p-0.5">
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        className={cn(
+          "rounded-[10px] px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
+          !isMeow ? "bg-bg-card-alpha-heavy text-text-primary" : "text-text-tertiary"
+        )}
+      >
+        通常 (6体)
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        className={cn(
+          "rounded-[10px] px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
+          isMeow ? "bg-bg-card-alpha-heavy text-text-primary" : "text-text-tertiary"
+        )}
+      >
+        M.E.O.W (9体)
+      </button>
+    </div>
+  );
+}

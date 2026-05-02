@@ -189,6 +189,9 @@ export function HomeBuildsSection({ builds, charMap }: HomeuildsSectionProps) {
                     {build.mode && (
                       <span className="rounded-md bg-bg-card-alpha-light px-2 py-0.5 text-[10px] font-bold text-text-muted">
                         {BUILD_MODE_LABEL_MAP[build.mode as BuildMode] ?? build.mode}
+                        {build.mode === "alias" && build.members.filter((m) => m !== null).length === 9
+                          ? "・M.E.O.W"
+                          : ""}
                       </span>
                     )}
                   </div>

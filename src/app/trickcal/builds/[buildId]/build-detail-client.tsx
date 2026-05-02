@@ -9,8 +9,13 @@ import { Button } from "@/components/ui/button";
 import { CharacterIcon } from "@/components/trickcal/character/character-icon";
 import { ThumbsUpDown } from "@/components/reaction/thumbs-up-down";
 import { cn } from "@/lib/utils";
-import { ELEMENT_ICONS, BUILD_MODE_LABEL_MAP } from "@/lib/trickcal/constants";
+import { ELEMENT_ICONS, BUILD_MODE_LABEL_MAP, isMeowBuild } from "@/lib/trickcal/constants";
 import type { BuildMode } from "@/lib/trickcal/constants";
+
+function buildModeLabelText(mode: BuildMode, partySize: number): string {
+  const base = BUILD_MODE_LABEL_MAP[mode];
+  return isMeowBuild(mode, partySize) ? `${base}・M.E.O.W` : base;
+}
 import { useToast, Toast } from "@/components/ui/toast";
 
 type CharacterInfo = {
@@ -220,7 +225,7 @@ export function BuildDetailClient({
   }, [shareMenuOpen]);
 
   const shareUrl = `https://rank-nest.com/trickcal/builds/${initialBuild.id}`;
-  const shareText = `「${initialBuild.title || BUILD_MODE_LABEL_MAP[initialBuild.mode]}」の編成をチェック！`;
+  const shareText = `「${initialBuild.title || buildModeLabelText(initialBuild.mode, initialBuild.party_size)}」の編成をチェック！`;
 
   const handleShareX = () => {
     setShareMenuOpen(false);
@@ -533,7 +538,7 @@ export function BuildDetailClient({
         {/* タイトル + 属性アイコン + モード + 通報 */}
         <div className="mb-3 flex items-center justify-between gap-2">
           <h1 className="min-w-0 truncate text-sm font-bold text-text-primary">
-            {build.title || BUILD_MODE_LABEL_MAP[build.mode]}
+            {build.title || buildModeLabelText(build.mode, build.party_size)}
           </h1>
           <div className="flex shrink-0 items-center gap-1.5">
             {build.members_detail
@@ -552,7 +557,7 @@ export function BuildDetailClient({
                 ) : null
               ))}
             <span className="rounded-md bg-bg-card-alpha-light px-2 py-0.5 text-[10px] font-bold text-text-muted">
-              {BUILD_MODE_LABEL_MAP[build.mode]}
+              {buildModeLabelText(build.mode, build.party_size)}
             </span>
             <button
               onClick={() => setReportTarget({ type: "build", id: build.id })}
@@ -778,7 +783,7 @@ export function BuildDetailClient({
                 {/* タイトル + 性格アイコン + モード */}
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <span className="min-w-0 truncate text-sm font-bold text-text-primary">
-                    {sb.title || BUILD_MODE_LABEL_MAP[sb.mode]}
+                    {sb.title || buildModeLabelText(sb.mode, sb.members_detail.length)}
                   </span>
                   <div className="flex shrink-0 items-center gap-1.5">
                     {sb.members_detail
@@ -797,7 +802,7 @@ export function BuildDetailClient({
                         ) : null
                       ))}
                     <span className="rounded-md bg-bg-card-alpha-light px-2 py-0.5 text-[10px] font-bold text-text-muted">
-                      {BUILD_MODE_LABEL_MAP[sb.mode]}
+                      {buildModeLabelText(sb.mode, sb.members_detail.length)}
                     </span>
                   </div>
                 </div>

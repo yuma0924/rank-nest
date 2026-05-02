@@ -27,7 +27,6 @@ export const BUILD_MODES = [
   "dimension",
   "world_tree",
   "alias",
-  "meow",
 ] as const;
 export type BuildMode = (typeof BUILD_MODES)[number];
 
@@ -37,7 +36,6 @@ export const BUILD_MODE_OPTIONS: { value: BuildMode; label: string }[] = [
   { value: "dimension", label: "次元の衝突" },
   { value: "world_tree", label: "世界樹採掘基地" },
   { value: "alias", label: "エーリアスフロンティア" },
-  { value: "meow", label: "M.E.O.W" },
 ];
 
 export const BUILD_MODE_LABEL_MAP: Record<BuildMode, string> = {
@@ -46,13 +44,25 @@ export const BUILD_MODE_LABEL_MAP: Record<BuildMode, string> = {
   dimension: "次元",
   world_tree: "世界樹",
   alias: "エーリアス",
-  meow: "M.E.O.W",
 };
 
-// mode から party_size 上限を返す。dimension / meow は 9、それ以外は 6。
-export function getBuildPartySize(mode: BuildMode): number {
-  if (mode === "dimension" || mode === "meow") return 9;
+// mode の編成サイズ上限。dimension は 9 固定、alias は M.E.O.W も含めて最大 9。
+// 他は 6 固定。
+export function getBuildMaxPartySize(mode: BuildMode): number {
+  if (mode === "dimension" || mode === "alias") return 9;
   return 6;
+}
+
+// 投稿フォームでの実際の編成サイズ。alias は M.E.O.W トグルで 6 か 9 を切替。
+export function getBuildFormPartySize(mode: BuildMode, isMeow: boolean): number {
+  if (mode === "dimension") return 9;
+  if (mode === "alias") return isMeow ? 9 : 6;
+  return 6;
+}
+
+// 既存の編成データが M.E.O.W 編成かどうか判定（一覧/詳細ページ表示用）
+export function isMeowBuild(mode: BuildMode, partySize: number): boolean {
+  return mode === "alias" && partySize === 9;
 }
 
 export const ROLE_ICON_MAP: Record<string, string> = {

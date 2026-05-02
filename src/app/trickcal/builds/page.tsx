@@ -5,7 +5,6 @@ import { StaticIcon } from "@/components/ui/static-icon";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAllVisibleCharacters } from "@/lib/trickcal/cached-queries";
 import { BuildsClient } from "./builds-client";
-import { getBuildPartySize } from "@/lib/trickcal/constants";
 import type { BuildMode } from "@/lib/trickcal/constants";
 
 const ELEMENT_ICON_MAP: Record<string, string> = {
@@ -97,10 +96,23 @@ export default async function BuildsPage() {
   const buildCharMap = new Map(allCharsCached.map((c) => [c.id, c]));
 
   const initialBuildsData = {
-    builds: (initialBuilds ?? []).slice(0, 20).map((b) => ({
+    builds: (initialBuilds ?? []).slice(0, 20).map((b) => {
+      // 実メンバー数で party_size を計算（alias は 6 / 9 が混在し得る）
+      const actualMembersCount = (b.members as (string | null)[]).filter(
+        (id): id is string => id !== null
+      ).length;
+      const partySize =
+        b.mode === "dimension"
+          ? 9
+          : b.mode === "alias"
+            ? actualMembersCount === 9
+              ? 9
+              : 6
+            : 6;
+      return {
       id: b.id,
       mode: b.mode as BuildMode,
-      party_size: getBuildPartySize(b.mode as BuildMode),
+      party_size: partySize,
       members: b.members as string[],
       members_detail: (b.members as (string | null)[]).filter((id): id is string => id !== null).map((id) => {
         const c = buildCharMap.get(id);
@@ -119,7 +131,8 @@ export default async function BuildsPage() {
       comments_count: Array.isArray(b.build_comments) && b.build_comments.length > 0
         ? (b.build_comments[0] as { count: number }).count
         : 0,
-    })),
+      };
+    }),
     hasMore: (initialBuilds ?? []).length > 20,
     nextCursor: (initialBuilds ?? []).length > 20 ? (initialBuilds ?? [])[19]?.id ?? null : null,
   };

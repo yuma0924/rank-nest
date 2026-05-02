@@ -257,7 +257,7 @@ export interface Database {
       builds: {
         Row: {
           id: string;
-          mode: "general" | "arena" | "dimension" | "world_tree" | "alias" | "meow";
+          mode: "general" | "arena" | "dimension" | "world_tree" | "alias";
           party_size: number;
           members: string[];
           element_label: string | null;
@@ -274,7 +274,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          mode: "general" | "arena" | "dimension" | "world_tree" | "alias" | "meow";
+          mode: "general" | "arena" | "dimension" | "world_tree" | "alias";
           party_size: number;
           members: string[];
           element_label?: string | null;
@@ -291,7 +291,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          mode?: "general" | "arena" | "dimension" | "world_tree" | "alias" | "meow";
+          mode?: "general" | "arena" | "dimension" | "world_tree" | "alias";
           party_size?: number;
           members?: string[];
           element_label?: string | null;
