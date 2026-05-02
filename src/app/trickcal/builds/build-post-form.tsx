@@ -826,27 +826,27 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
         {/* 編成名 + 名前（PC: 横並び） */}
         <div ref={nameFieldRef} className="flex flex-col gap-4 md:flex-row md:gap-6 md:max-w-[93%]">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <label className="w-12 shrink-0 text-sm text-text-secondary md:w-auto">
-              編成名
+            <label className="shrink-0 text-sm text-text-secondary">
+              編成名（任意）
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="無題の編成"
+              placeholder="編成名を入力"
               maxLength={100}
               className="min-w-0 flex-1 rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted/50 focus:border-accent/50 focus:outline-none"
             />
           </div>
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <label className="w-12 shrink-0 text-sm text-text-secondary md:w-auto">
-              名前
+            <label className="shrink-0 text-sm text-text-secondary">
+              名前（任意）
           </label>
           <input
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="名無しの教主"
+            placeholder="名前を入力"
             maxLength={50}
             className="min-w-0 flex-1 rounded-xl border border-border-primary bg-bg-input px-3 py-2.5 text-base text-text-primary placeholder:text-text-muted/50 focus:border-accent/50 focus:outline-none"
           />
