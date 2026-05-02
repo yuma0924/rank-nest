@@ -722,7 +722,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
 
         {/* 配置グリッド（PC: 右カラム） */}
         <div className="mt-2 md:mt-0 md:w-64 md:shrink-0">
-        {selectedChar && isAtLimit && (
+        {isAtLimit && (selectedChar || (selectedSlot !== null && !formation[selectedSlot])) && (
           <div className="mb-2 rounded-lg border border-[rgba(244,114,182,0.4)] bg-[rgba(244,114,182,0.12)] px-3 py-1.5 text-[11px] font-bold text-text-secondary">
             このモードでは{partySize}体が上限です
           </div>
