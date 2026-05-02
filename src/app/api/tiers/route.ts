@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
       .from("tiers")
       .insert({
         data: data as Record<string, string[]>,
-        title: title?.trim() || null,
+        title: title?.trim() || "無題のティア",
         display_name: finalDisplayName,
         description: description?.trim() || null,
         user_hash: userHash,
