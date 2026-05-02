@@ -39,11 +39,13 @@ interface BuildPostFormProps {
 const POSITION_LABELS = ["後列", "中列", "前列"] as const;
 
 
-// グリッドの行数。partySize=9 (dimension/M.E.O.W) は 3 行、それ以外は 2 行。
-// 各行 3 列 (前列/中列/後列) なので、行数 × 3 = partySize と一致する。
-function getRowCount(partySize: number): number {
-  return partySize === 9 ? 3 : 2;
+// グリッドの行数は常に 3。配置スロットは partySize に関わらず 3 行 × 3 列 = 9 枠で
+// 提示し、配置可能な実体数を partySize で制限する。
+function getRowCount(): number {
+  return 3;
 }
+
+const SLOT_COUNT = 9;
 
 // スロットインデックスからポジション列を取得
 function getSlotColumn(slotIndex: number, rowCount: number): string {
@@ -60,7 +62,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
   const [positionFilterManual, setPositionFilterManual] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [formation, setFormation] = useState<(CharacterInfo | null)[]>(
-    Array(6).fill(null)
+    Array(SLOT_COUNT).fill(null)
   );
   const nameFieldRef = useRef<HTMLDivElement>(null);
 
@@ -136,15 +138,22 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
     if (formMode !== "alias") setIsMeow(false);
   }, [formMode]);
 
-  // モード/M.E.O.Wトグル変更時、編成サイズを切り替えつつ既存の選択は可能な限り保持する
+  // モード/M.E.O.W トグル変更時、編成上限が変わったら超過分のキャラを外す。
+  // formation は常に SLOT_COUNT (9) 要素で固定し、配置済みインデックスの後ろから外す。
   useEffect(() => {
-    const size = getBuildFormPartySize(formMode, isMeow);
+    const limit = getBuildFormPartySize(formMode, isMeow);
     setFormation((prev) => {
-      if (prev.length === size) return prev;
-      const next: (CharacterInfo | null)[] = Array(size).fill(null);
-      for (let i = 0; i < Math.min(prev.length, size); i++) {
-        next[i] = prev[i];
-      }
+      const base = prev.length === SLOT_COUNT ? prev : (() => {
+        const a: (CharacterInfo | null)[] = Array(SLOT_COUNT).fill(null);
+        for (let i = 0; i < Math.min(prev.length, SLOT_COUNT); i++) a[i] = prev[i];
+        return a;
+      })();
+      const filledIndices: number[] = [];
+      for (let i = 0; i < SLOT_COUNT; i++) if (base[i]) filledIndices.push(i);
+      if (filledIndices.length <= limit) return base;
+      const next = [...base];
+      // slotIndex の大きい方 (後ろのスロット) から外す
+      for (const idx of filledIndices.slice(limit)) next[idx] = null;
       return next;
     });
     setSelectedChar(null);
@@ -154,7 +163,9 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
   }, [formMode, isMeow]);
 
   const partySize = getBuildFormPartySize(formMode, isMeow);
-  const rowCount = getRowCount(partySize);
+  const rowCount = getRowCount();
+  const filledCount = formation.filter(Boolean).length;
+  const isAtLimit = filledCount >= partySize;
 
   // 配置済みキャラIDセット
   const placedIds = useMemo(
@@ -199,6 +210,8 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
       if (char.position && char.position !== slotColumn) {
         return; // ポジション不一致
       }
+      // 空スロットへの新規配置は上限チェック
+      if (!formation[selectedSlot] && isAtLimit) return;
       setFormation((prev) => {
         const next = [...prev];
         next[selectedSlot] = char;
@@ -284,6 +297,11 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
     // キャラが既に選択されている場合は配置を試みる
     if (selectedChar) {
       if (!selectedChar.position || selectedChar.position === slotColumn) {
+        // 空スロットへの新規配置は上限チェック
+        if (isAtLimit) {
+          // 上限到達。スロット選択状態のまま、placeholder filter は付ける
+          return;
+        }
         setFormation((prev) => {
           const next = [...prev];
           next[slotIndex] = selectedChar;
@@ -310,6 +328,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
   const canPlaceInSlot = (slotIndex: number): boolean => {
     if (!selectedChar) return false;
     if (formation[slotIndex]) return false;
+    if (isAtLimit) return false; // 上限到達時は新規配置不可
     const slotColumn = getSlotColumn(slotIndex, rowCount);
     if (selectedChar.position && selectedChar.position !== slotColumn) {
       return false;
@@ -329,7 +348,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
 
   // 全解除
   const handleClearAll = () => {
-    setFormation(Array(partySize).fill(null));
+    setFormation(Array(SLOT_COUNT).fill(null));
     setSelectedChar(null);
     setSelectedSlot(null);
     setPositionFilter("");
@@ -375,7 +394,7 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
       }
 
       // リセット
-      setFormation(Array(partySize).fill(null));
+      setFormation(Array(SLOT_COUNT).fill(null));
       setComment("");
       setTitle("");
       setDisplayName("");
