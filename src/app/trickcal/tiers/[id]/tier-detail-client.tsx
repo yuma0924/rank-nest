@@ -551,9 +551,9 @@ export function TierDetailClient({
           );
         })}
         {/* フッター */}
-        <div className="flex items-start justify-between gap-3 border-t border-border-primary bg-bg-tertiary/50 px-4 py-3">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 text-xs text-text-muted">
+        <div className="border-t border-border-primary bg-bg-tertiary/50 px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2 text-xs text-text-muted">
               {tier.display_name && (
                 <>
                   <span className="font-semibold text-text-primary">{tier.display_name}</span>
@@ -562,13 +562,7 @@ export function TierDetailClient({
               )}
               <span suppressHydrationWarning>{formatDate(tier.created_at)}</span>
             </div>
-            {tier.description && (
-              <p className="mt-2 whitespace-pre-wrap text-sm md:text-base leading-relaxed text-text-secondary">
-                {tier.description}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <div className="relative" ref={shareMenuRef}>
               <button
                 type="button"
@@ -612,6 +606,12 @@ export function TierDetailClient({
               onToggle={handleToggleLike}
             />
           </div>
+          </div>
+          {tier.description && (
+            <p className="mt-2 whitespace-pre-wrap text-sm md:text-base leading-relaxed text-text-secondary">
+              {tier.description}
+            </p>
+          )}
         </div>
       </div>
 
