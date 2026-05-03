@@ -52,7 +52,7 @@ export default async function BuildsPage() {
     getAllVisibleCharacters(),
     supabase
       .from("builds")
-      .select("id, mode, members, element_label, title, display_name, comment, likes_count, dislikes_count, updated_at, user_hash, build_comments(count)")
+      .select("id, mode, members, element_label, title, display_name, comment, likes_count, dislikes_count, created_at, updated_at, user_hash, build_comments(count)")
       .eq("is_deleted", false)
       .eq("mode", "general")
       .order("likes_count", { ascending: false })
@@ -125,7 +125,7 @@ export default async function BuildsPage() {
       likes_count: b.likes_count,
       dislikes_count: b.dislikes_count,
       is_deleted: false,
-      created_at: b.updated_at,
+      created_at: b.created_at,
       updated_at: b.updated_at,
       user_reaction: null as "up" | "down" | null,
       comments_count: Array.isArray(b.build_comments) && b.build_comments.length > 0

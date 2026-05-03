@@ -54,6 +54,7 @@ type SimilarBuild = {
   element_label: string | null;
   likes_count: number;
   members_detail: CharacterInfo[];
+  created_at: string;
   updated_at: string;
 };
 
@@ -637,7 +638,7 @@ export function BuildDetailClient({
         {/* フッター: 日時 + 共有 + リアクション */}
         <div className="mt-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-xs md:text-sm text-text-muted">
-            <span suppressHydrationWarning>{formatDate(build.updated_at)}</span>
+            <span suppressHydrationWarning>{formatDate(build.created_at)}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative" ref={shareMenuRef}>
@@ -825,7 +826,7 @@ export function BuildDetailClient({
                 </div>
                 {/* 日時 + いいね数 */}
                 <div className="mt-1 flex items-center justify-between text-xs text-text-muted">
-                  <span suppressHydrationWarning>{formatDate(sb.updated_at)}</span>
+                  <span suppressHydrationWarning>{formatDate(sb.created_at)}</span>
                   <span className="flex items-center gap-0.5 text-thumbs-up">
                     <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66-.23-.45-.52-.86-.88-1.22L14 2 7.59 8.41C7.21 8.79 7 9.3 7 9.83v7.84C7 18.95 8.05 20 9.34 20h8.11c.7 0 1.36-.37 1.72-.97l2.66-6.15z" />

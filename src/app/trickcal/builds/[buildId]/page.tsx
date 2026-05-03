@@ -51,6 +51,7 @@ type SimilarBuild = {
   element_label: string | null;
   likes_count: number;
   members_detail: CharacterInfo[];
+  created_at: string;
   updated_at: string;
 };
 
@@ -202,6 +203,7 @@ export default async function BuildDetailPage({
           is_hidden: false,
         }
     ),
+    created_at: sb.created_at,
     updated_at: sb.updated_at,
   }));
 
