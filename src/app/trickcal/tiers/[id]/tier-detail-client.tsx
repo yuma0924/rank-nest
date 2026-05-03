@@ -546,7 +546,7 @@ export function TierDetailClient({
                 name: c.name,
                 image_url: c.image_url,
               }))}
-              iconClassName="h-14 w-14"
+              iconClassName="h-12 w-12 md:h-14 md:w-14"
             />
           );
         })}

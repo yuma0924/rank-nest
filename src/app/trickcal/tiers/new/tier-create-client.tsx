@@ -288,7 +288,7 @@ export function TierCreateClient({ characters }: TierCreateClientProps) {
                 };
               })}
               isDraggable
-              iconClassName="h-14 w-14"
+              iconClassName="h-12 w-12 md:h-14 md:w-14"
             />
           ))}
         </div>
@@ -418,7 +418,7 @@ function UnassignedPanel({
                 isDraggable
                 showName={false}
                 size="md"
-                iconClassName="h-14 w-14"
+                iconClassName="h-12 w-12 md:h-14 md:w-14"
               />
             );
           })}
