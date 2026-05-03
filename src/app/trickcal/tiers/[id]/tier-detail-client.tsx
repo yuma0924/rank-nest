@@ -552,6 +552,11 @@ export function TierDetailClient({
         })}
         {/* フッター */}
         <div className="border-t border-border-primary bg-bg-tertiary/50 px-4 py-3">
+          {tier.description && (
+            <p className="mb-2 whitespace-pre-wrap text-sm md:text-base leading-relaxed text-text-secondary">
+              {tier.description}
+            </p>
+          )}
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2 text-xs text-text-muted">
               {tier.display_name && (
@@ -607,11 +612,6 @@ export function TierDetailClient({
             />
           </div>
           </div>
-          {tier.description && (
-            <p className="mt-2 whitespace-pre-wrap text-sm md:text-base leading-relaxed text-text-secondary">
-              {tier.description}
-            </p>
-          )}
         </div>
       </div>
 
