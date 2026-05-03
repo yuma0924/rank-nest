@@ -622,23 +622,21 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
             )}
           </div>
           <div className="w-64 shrink-0">
-            {selectedSlot === null && !selectedChar && (
-              <div className="flex items-center justify-between py-2">
-                <span className="text-xs text-text-secondary">
-                  キャラクター選択<span className="text-[#f87171]">*</span>（{partySize}体）
-                  <span className="ml-1 font-bold text-accent">
-                    {formation.filter(Boolean).length}/{partySize}
-                  </span>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-xs text-text-secondary">
+                キャラクター選択<span className="text-[#f87171]">*</span>（{partySize}体）
+                <span className="ml-1 font-bold text-accent">
+                  {formation.filter(Boolean).length}/{partySize}
                 </span>
-                <button
-                  type="button"
-                  onClick={handleClearAll}
-                  className="rounded-lg border border-border-primary bg-bg-inset px-2.5 py-1 text-[11px] font-bold text-text-muted transition-colors hover:border-[rgba(255,99,126,0.4)] hover:text-accent cursor-pointer"
-                >
-                  全解除
-                </button>
-              </div>
-            )}
+              </span>
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="rounded-lg border border-border-primary bg-bg-inset px-2.5 py-1 text-[11px] font-bold text-text-muted transition-colors hover:border-[rgba(255,99,126,0.4)] hover:text-accent cursor-pointer"
+              >
+                全解除
+              </button>
+            </div>
           </div>
         </div>
 
@@ -704,7 +702,6 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
           )}
         </div>
         {/* モバイル: 選択カウンター + 全解除 */}
-        {selectedSlot === null && !selectedChar && (
         <div className="flex items-center justify-between mt-4 md:hidden">
           <span className="text-xs text-text-secondary">
             キャラクター選択<span className="text-[#f87171]">*</span>（{partySize}体）
@@ -720,7 +717,6 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
             全解除
           </button>
         </div>
-        )}
         </div>{/* 左カラム閉じ */}
 
         {/* 配置グリッド（PC: 右カラム） */}
