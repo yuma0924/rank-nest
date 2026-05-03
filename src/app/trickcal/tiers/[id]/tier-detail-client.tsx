@@ -272,7 +272,7 @@ export function TierDetailClient({
     const params = new URLSearchParams({
       text: shareText,
       url: shareUrl,
-      hashtags: "トリッカルランキング",
+      hashtags: "トリッカル,もちもちほっぺ大作戦,トリッカルランキング",
     });
     const a = document.createElement("a");
     a.href = `https://twitter.com/intent/tweet?${params.toString()}`;
