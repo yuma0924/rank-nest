@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { PageTitleLink } from "@/components/trickcal/layout/page-title-link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { RankingClient } from "./ranking-client";
 import type { Element } from "@/lib/trickcal/constants";
@@ -203,7 +203,7 @@ export default async function RankingPage() {
       {/* ページタイトル */}
       <div>
         <div className="flex items-center justify-between">
-          <Link
+          <PageTitleLink
             href="/trickcal/ranking"
             className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
           >
@@ -218,7 +218,7 @@ export default async function RankingPage() {
             <h1 className="text-lg font-bold text-text-primary">
               人気キャラランキング
             </h1>
-          </Link>
+          </PageTitleLink>
           <span className="rounded bg-bg-card-alpha-light border border-border-primary px-2 py-1 text-[10px] md:text-xs text-text-muted">
             集計：毎日0時
           </span>

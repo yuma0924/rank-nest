@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { StaticIcon } from "@/components/ui/static-icon";
+import { PageTitleLink } from "@/components/trickcal/layout/page-title-link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAllVisibleCharacters } from "@/lib/trickcal/cached-queries";
 import { BuildsClient } from "./builds-client";
@@ -205,7 +206,7 @@ export default async function BuildsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link
+        <PageTitleLink
           href="/trickcal/builds"
           className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
         >
@@ -218,7 +219,7 @@ export default async function BuildsPage() {
             </svg>
           </span>
           <h1 className="text-lg font-bold text-text-primary">人気編成ランキング</h1>
-        </Link>
+        </PageTitleLink>
         <p className="mt-1 pl-[42px] text-xs md:text-sm text-text-muted">
           人気のパーティ編成をチェック・投稿しよう
         </p>
