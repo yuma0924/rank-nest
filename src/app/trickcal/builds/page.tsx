@@ -205,7 +205,10 @@ export default async function BuildsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center gap-2.5">
+        <Link
+          href="/trickcal/builds"
+          className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
+        >
           <span
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px]"
             style={{ backgroundImage: "linear-gradient(135deg, #3b82f6, #06b6d4)" }}
@@ -215,7 +218,7 @@ export default async function BuildsPage() {
             </svg>
           </span>
           <h1 className="text-lg font-bold text-text-primary">人気編成ランキング</h1>
-        </div>
+        </Link>
         <p className="mt-1 pl-[42px] text-xs md:text-sm text-text-muted">
           人気のパーティ編成をチェック・投稿しよう
         </p>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAllVisibleCharacters } from "@/lib/trickcal/cached-queries";
 import { TiersClient } from "./tiers-client";
@@ -57,7 +58,10 @@ export default async function TiersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center gap-2.5">
+        <Link
+          href="/trickcal/tiers"
+          className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
+        >
           <span
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px]"
             style={{ backgroundImage: "linear-gradient(135deg, #9048d4, #d4408a)" }}
@@ -74,7 +78,7 @@ export default async function TiersPage() {
             </svg>
           </span>
           <h1 className="text-lg font-bold text-text-primary">みんなのティア表</h1>
-        </div>
+        </Link>
         <p className="mt-1 pl-[42px] text-xs md:text-sm text-text-muted">
           キャラクターをランク付けして共有しよう
         </p>
