@@ -1,8 +1,7 @@
-import Image from "next/image";
-import Link from "next/link";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { HeaderSearch, type SearchCharacter } from "@/components/trickcal/layout/header-search";
 import { HeaderLogo } from "@/components/trickcal/layout/header-logo";
+import { HeaderNav } from "@/components/trickcal/layout/header-nav";
 
 interface HeaderProps {
   characters: SearchCharacter[];
@@ -14,17 +13,7 @@ export function Header({ characters }: HeaderProps) {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 md:px-8">
         <HeaderLogo />
         <nav className="flex items-center gap-2">
-          <div className="hidden md:flex items-center gap-4 mr-4">
-            <Link href="/trickcal/ranking" className="text-sm md:text-base text-text-secondary hover:text-text-primary transition-colors">
-              ランキング
-            </Link>
-            <Link href="/trickcal/tiers" className="text-sm md:text-base text-text-secondary hover:text-text-primary transition-colors">
-              ティア
-            </Link>
-            <Link href="/trickcal/builds" className="text-sm md:text-base text-text-secondary hover:text-text-primary transition-colors">
-              編成
-            </Link>
-          </div>
+          <HeaderNav />
           <HeaderSearch characters={characters} />
           <ThemeToggle />
         </nav>
