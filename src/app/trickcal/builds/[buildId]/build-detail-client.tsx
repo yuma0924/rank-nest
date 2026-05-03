@@ -567,7 +567,7 @@ export function BuildDetailClient({
                   />
                 ) : null
               ))}
-            <span className="rounded-md bg-bg-card-alpha-light px-2 py-0.5 text-[10px] font-bold text-text-muted">
+            <span className="rounded-md border border-border-primary bg-bg-card-alpha-light px-2 py-0.5 text-[10px] font-bold text-text-muted">
               {buildModeLabelText(build.mode, build.party_size)}
             </span>
             <button
@@ -817,7 +817,7 @@ export function BuildDetailClient({
                           />
                         ) : null
                       ))}
-                    <span className="rounded-md bg-bg-card-alpha-light px-2 py-0.5 text-[10px] font-bold text-text-muted">
+                    <span className="rounded-md border border-border-primary bg-bg-card-alpha-light px-2 py-0.5 text-[10px] font-bold text-text-muted">
                       {buildModeLabelText(sb.mode, sb.members_detail.length)}
                     </span>
                   </div>

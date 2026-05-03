@@ -661,7 +661,7 @@ function BuildCard({
                   />
                 ) : null
               ))}
-            <span className="rounded-md bg-bg-card-alpha-light px-2 py-0.5 text-[10px] md:text-xs font-bold text-text-muted">
+            <span className="rounded-md border border-border-primary bg-bg-card-alpha-light px-2 py-0.5 text-[10px] md:text-xs font-bold text-text-muted">
               {build.mode === "alias" && build.party_size === 9
                 ? `${BUILD_MODE_LABEL_MAP[build.mode]}・M.E.O.W`
                 : BUILD_MODE_LABEL_MAP[build.mode]}
