@@ -336,7 +336,7 @@ export function BuildsClient({ initialBuilds }: BuildsClientProps) {
           <select
             value={mode}
             onChange={(e) => setMode(e.target.value as BuildMode)}
-            className="w-44 appearance-none rounded-[14px] border border-border-primary bg-bg-card-alpha px-4 py-2.5 pr-9 text-sm font-bold text-text-primary cursor-pointer focus:border-accent/50 focus:outline-none"
+            className="w-52 appearance-none rounded-[14px] border border-border-primary bg-bg-card-alpha px-4 py-2.5 pr-9 text-sm font-bold text-text-primary cursor-pointer focus:border-accent/50 focus:outline-none"
           >
             {BUILD_MODE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
