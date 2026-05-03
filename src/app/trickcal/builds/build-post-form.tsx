@@ -615,7 +615,10 @@ export function BuildPostForm({ mode: externalMode, onModeChange, onPosted, onCl
                 </button>
               </div>
             ) : (
-              <div className="flex h-full items-center text-sm text-text-muted">キャラクターをタップして選択</div>
+              <div className="flex items-center gap-2 rounded-xl border border-dashed border-border-primary bg-bg-input/40 px-3 py-2">
+                <div className="h-10 w-10 shrink-0 rounded-lg border-2 border-dashed border-border-secondary/60" />
+                <span className="text-sm text-text-muted">キャラクターをタップして選択</span>
+              </div>
             )}
           </div>
           <div className="w-64 shrink-0">
