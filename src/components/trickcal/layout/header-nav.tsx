@@ -52,24 +52,14 @@ export function HeaderNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "group flex items-center gap-1.5 transition-colors",
+              "group relative flex items-center gap-1.5 text-sm md:text-base transition-colors",
               active
-                ? "text-text-primary"
+                ? "text-accent after:absolute after:-bottom-1.5 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-gradient-to-r after:from-[#e05aa8] after:to-[#f08a9a]"
                 : "text-text-secondary hover:text-text-primary"
             )}
           >
-            <span className={cn("transition-colors", active ? "text-accent" : "text-text-tertiary group-hover:text-accent")}>
-              {item.icon}
-            </span>
-            <span
-              className={cn(
-                "relative text-sm md:text-base",
-                active &&
-                  "after:absolute after:-bottom-1.5 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-gradient-to-r after:from-[#e05aa8] after:to-[#f08a9a]"
-              )}
-            >
-              {item.label}
-            </span>
+            <span>{item.icon}</span>
+            <span>{item.label}</span>
           </Link>
         );
       })}
