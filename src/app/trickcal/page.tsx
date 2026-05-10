@@ -239,8 +239,7 @@ export default async function Home() {
       .select("character_id, avg_rating, valid_votes_count, board_comments_count, rank")
       .not("rank", "is", null)
       .gte("valid_votes_count", 1)
-      .order("rank", { ascending: true })
-      .limit(15),
+      .order("rank", { ascending: true }),
     supabase
       .from("characters")
       .select("id, slug, name, element, role, position, attack_type, race, rarity, image_url")
@@ -297,8 +296,9 @@ export default async function Home() {
     }
   }
 
-  // 注目コメント取得（各キャラの上位1件）
-  const rankedCharIds = (rankings ?? []).map((r) => r.character_id);
+  // 上位15キャラ：トップランキング表示・注目コメント取得用
+  const topRankings = (rankings ?? []).slice(0, 15);
+  const rankedCharIds = topRankings.map((r) => r.character_id);
 
   const { data: featuredComments } =
     rankedCharIds.length > 0
@@ -350,7 +350,7 @@ export default async function Home() {
     }
   }
 
-  const rankedCharacters: RankedChar[] = (rankings ?? [])
+  const rankedCharacters: RankedChar[] = topRankings
     .map((r) => {
       const char = charMap.get(r.character_id);
       if (!char || r.rank === null) return null;
